@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="GroupChat_Client/GroupChat_Client.csproj" />
+  <Project Path="GroupChat_Server/GroupChat_Server.csproj" />
+</Solution>
