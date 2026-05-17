@@ -1,6 +1,8 @@
 ﻿using GroupChat_Client.Commands;
 using GroupChat_Client.Models;
+using GroupChat_Client.Views;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Net.Sockets;
@@ -18,6 +20,8 @@ namespace GroupChat_Client.ViewModels
         private readonly NetworkStream _stream;
 
         private string _messageText = string.Empty;
+        private bool _isDisconnecting;
+        private bool _isEmojiPickerOpen;
 
         public string Username { get; }
 
@@ -35,7 +39,23 @@ namespace GroupChat_Client.ViewModels
             }
         }
 
+        public bool IsEmojiPickerOpen
+        {
+            get => _isEmojiPickerOpen;
+            set
+            {
+                _isEmojiPickerOpen = value;
+                OnPropertyChanged();
+            }
+        }
+
+        // Lấy danh sách trực tiếp từ Model dữ liệu tĩnh
+        public List<string> AvailableEmojis { get; } = EmojiProvider.GetEmojis();
+
         public ICommand SendCommand { get; }
+        public ICommand BackCommand { get; }
+        public ICommand EmojiCommand { get; }
+        public ICommand InsertEmojiCommand { get; }
 
         public ChatViewModel(TcpClient client, string username, string serverIp)
         {
@@ -46,13 +66,13 @@ namespace GroupChat_Client.ViewModels
             ServerIp = serverIp;
 
             SendCommand = new RelayCommand(SendMessage);
+            BackCommand = new RelayCommand(BackToMain);
+            EmojiCommand = new RelayCommand(ShowEmojiPicker);
+            InsertEmojiCommand = new RelayCommand<string>(InsertEmoji);
 
             // Gửi username lên server ngay khi vào ChatWindow
             byte[] usernameData = Encoding.UTF8.GetBytes(Username);
             _stream.Write(usernameData, 0, usernameData.Length);
-
-            // Không tự add "connected" ở đây nữa
-            // Server sẽ gửi System|Username connected về cho tất cả client
 
             _ = ReceiveMessagesAsync();
         }
@@ -130,17 +150,67 @@ namespace GroupChat_Client.ViewModels
             }
             catch
             {
-                Application.Current.Dispatcher.Invoke(() =>
+                if (!_isDisconnecting)
                 {
-                    Messages.Add(new ChatMessage
+                    Application.Current.Dispatcher.Invoke(() =>
                     {
-                        Sender = "System",
-                        Content = "Disconnected from server",
-                        SentAt = DateTime.Now,
-                        IsOwnMessage = false
+                        Messages.Add(new ChatMessage
+                        {
+                            Sender = "System",
+                            Content = "Disconnected from server",
+                            SentAt = DateTime.Now,
+                            IsOwnMessage = false
+                        });
                     });
-                });
+                }
             }
+        }
+
+        private void ShowEmojiPicker()
+        {
+            // Thay đổi trạng thái đóng/mở của Popup
+            IsEmojiPickerOpen = !IsEmojiPickerOpen;
+        }
+
+        private void InsertEmoji(string? emoji)
+        {
+            if (!string.IsNullOrEmpty(emoji))
+            {
+                // Cộng chuỗi emoji trực tiếp vào TextBox đang bind
+                MessageText += emoji;
+            }
+        }
+
+        private void BackToMain()
+        {
+            _isDisconnecting = true;
+
+            try
+            {
+                _stream.Close();
+                _client.Close();
+            }
+            catch
+            {
+            }
+
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                MainWindow mainWindow = new MainWindow();
+                mainWindow.Show();
+
+                // Đặt cửa sổ chính mới
+                Application.Current.MainWindow = mainWindow;
+
+                // Quét và đóng triệt để tất cả ChatWindow đang mở
+                foreach (Window window in Application.Current.Windows)
+                {
+                    if (window is ChatWindow)
+                    {
+                        window.Close();
+                    }
+                }
+            });
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

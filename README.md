@@ -1,40 +1,45 @@
 # Group Chat Application
 
-A simple group chat application built with C# using TCP Socket programming.
+A simple and modern group chat application built with C# using TCP Socket programming.
 
 The project includes:
 
 - A Console-based Chat Server
-- A WPF Chat Client
-- MVVM architecture for the client side
+- A WPF Chat Client with a modern, dark-themed UI
+- Clean MVVM architecture for the client side
 
 ## Features
 
-- Connect to server using IP and Port
-- Enter username before joining chat
-- Open separate chat window after connecting
-- Send messages to other connected clients
-- Receive messages from other users in real time
-- Show username and server IP in chat window
-- Display system messages when users connect or disconnect
+- **Connection Management:** Connect to the server using a valid IP and Port
+- **Form Validation:** Input validation for Username, IP formatting, and Port ranges
+- **Real-time Messaging:** Send and receive messages instantly from other connected clients
+- **Emoji Support:** Built-in interactive emoji picker rendered in full color (powered by `Emoji.Wpf`)
+- **Smart Input:** Press `Enter` to send a message, or `Shift + Enter` to create a new line
+- **System Notifications:** Display system messages when users connect or disconnect from the room
+- **Clean Architecture:** Strict separation of UI and logic using MVVM pattern and Attached Behaviors
 
 ## Technologies Used
 
-- C#
-- .NET
-- WPF
-- TCP Socket
+- C# / .NET
+- WPF (Windows Presentation Foundation)
+- TCP Socket (`TcpListener` & `TcpClient`)
 - MVVM Pattern
+- NuGet Packages:
+  - `Emoji.Wpf`
 
 ## Project Structure
 
 ```text
 GroupChat/
 ├── GroupChat_Client/
+│   ├── Behaviors/
+│   │   └── TextBoxEnterBehavior.cs
 │   ├── Commands/
-│   │   └── RelayCommand.cs
+│   │   ├── RelayCommand.cs
+│   │   └── RelayCommand<T>.cs
 │   ├── Models/
-│   │   └── ChatMessage.cs
+│   │   ├── ChatMessage.cs
+│   │   └── EmojiProvider.cs
 │   ├── ViewModels/
 │   │   ├── MainViewModel.cs
 │   │   └── ChatViewModel.cs
@@ -53,30 +58,13 @@ GroupChat/
 └── README.md
 ```
 
-## Client Screens
-
-### Main Window
-
-The main window is used to enter connection information:
-
-- Username
-- Server IP
-- Port
-
-After clicking the Connect button, the chat window will open.
-
-### Chat Window
-
-The chat window is used to:
-
-- View connected username
-- View server IP
-- Send messages
-- Receive messages from other users
-
 ## How to Run
 
-### 1. Start the Server
+### 1. Restore Packages
+
+Before running the client, restore the NuGet packages for the project, especially the `Emoji.Wpf` package used in `GroupChat_Client`.
+
+### 2. Start the Server
 
 Run the server project first.
 
@@ -86,11 +74,18 @@ Example:
 
 ```text
 Server started
-IP: 127.0.0.1
+==============================
 Port: 5000
+
+Connect using one of these IPs:
+IP: 192.168.1.X    Port: 5000
+
+If client is on the same computer:
+IP: 127.0.0.1    Port: 5000
+==============================
 ```
 
-### 2. Start the Client
+### 3. Start the Client
 
 Run the WPF client project.
 
@@ -102,62 +97,58 @@ Server IP: 127.0.0.1
 Port: 5000
 ```
 
-Then click Connect.
+Then click **Connect**.
 
-### 3. Test Group Chat
+### 4. Test Group Chat
 
 To test group chat, open more than one client instance.
 
-Example:
-
-```text
-Client 1: user1
-Client 2: user2
-```
-
-When user1 sends a message, user2 will receive it.
-
-When user2 sends a message, user1 will receive it.
+When `user1` sends a message, `user2` will receive it instantly.
 
 ## MVVM Explanation
 
-This project uses the MVVM pattern.
+This project strictly adheres to the MVVM pattern.
 
 ### Model
 
-Models store application data.
+Stores application data and states.
 
-Example:
+Examples:
 
-- ChatMessage
+- `ChatMessage`
+- `EmojiProvider`
 
 ### View
 
-Views are the UI files.
+The UI files written in XAML.
 
-Example:
+Examples:
 
-- MainWindow.xaml
-- ChatWindow.xaml
+- `MainWindow.xaml`
+- `ChatWindow.xaml`
+
+Contains no business logic in the code-behind.
 
 ### ViewModel
 
-ViewModels handle UI logic and data binding.
+Handles UI logic, data binding, and commands.
 
-Example:
+Examples:
 
-- MainViewModel
-- ChatViewModel
+- `MainViewModel`
+- `ChatViewModel`
+
+### Behaviors & Commands
+
+Used to decouple UI events such as keyboard inputs from the ViewModels.
 
 ## Notes
 
 - The server must be running before the client connects
-- If the server uses a random port, the client must enter the new port shown in the server console
+- If the server uses a random port (`Port = 0`), the client must enter the exact new port shown in the server console
 - If testing on the same computer, use `127.0.0.1` as the server IP
-- If testing on another computer in the same network, use the local network IP shown by the server
+- If testing on another computer in the same network, use the local network IP shown by the server (for example: `192.168.x.x`)
 
 ## Author
 
 Group Chat Client / Server project
-"# GroupChat" 
-"# GroupChat" 

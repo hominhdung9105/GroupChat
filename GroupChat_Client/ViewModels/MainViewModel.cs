@@ -2,6 +2,7 @@
 using GroupChat_Client.Views;
 using System;
 using System.ComponentModel;
+using System.Net; // Thêm thư viện này để Validate IP
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -54,31 +55,61 @@ namespace GroupChat_Client.ViewModels
 
         private async void Connect()
         {
-            if (string.IsNullOrWhiteSpace(Username))
+            // 1. Trim dữ liệu để loại bỏ khoảng trắng thừa ở đầu và cuối
+            string trimmedUsername = Username?.Trim() ?? string.Empty;
+            string trimmedIp = ServerIp?.Trim() ?? string.Empty;
+            string trimmedPort = Port?.Trim() ?? string.Empty;
+
+            // 2. Gán ngược lại để giao diện tự động xóa các dấu cách thừa mà user lỡ nhập
+            Username = trimmedUsername;
+            ServerIp = trimmedIp;
+            Port = trimmedPort;
+
+            // 3. Validate Username
+            if (string.IsNullOrWhiteSpace(trimmedUsername))
             {
-                MessageBox.Show("Please enter username");
+                MessageBox.Show("Please enter a valid username.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            if (!int.TryParse(Port, out int portNumber))
+            // 4. Validate Server IP (Kiểm tra xem chuỗi nhập vào có phải là một địa chỉ IP hợp lệ không)
+            if (string.IsNullOrWhiteSpace(trimmedIp) || !IPAddress.TryParse(trimmedIp, out IPAddress? parsedIp))
             {
-                MessageBox.Show("Invalid port");
+                MessageBox.Show("Please enter a valid Server IP address (e.g., 127.0.0.1).", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // 5. Validate Port (Kiểm tra xem có phải là số và nằm trong dải port hợp lệ 1 - 65535 không)
+            if (string.IsNullOrWhiteSpace(trimmedPort) ||
+                !int.TryParse(trimmedPort, out int portNumber) ||
+                portNumber < 1 || portNumber > 65535)
+            {
+                MessageBox.Show("Please enter a valid port number (1 - 65535).", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             try
             {
                 TcpClient client = new TcpClient();
-                await client.ConnectAsync(ServerIp, portNumber);
+                // Sử dụng trimmedIp thay vì ServerIp cũ để đảm bảo an toàn
+                await client.ConnectAsync(trimmedIp, portNumber);
 
-                ChatWindow chatWindow = new ChatWindow(client, Username, ServerIp);
+                ChatWindow chatWindow = new ChatWindow(client, trimmedUsername, trimmedIp);
                 chatWindow.Show();
 
-                Application.Current.MainWindow?.Close();
+                // Logic đóng cửa sổ an toàn đã làm ở bước trước
+                Application.Current.MainWindow = chatWindow;
+                foreach (Window window in Application.Current.Windows)
+                {
+                    if (window is MainWindow)
+                    {
+                        window.Close();
+                    }
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Connect failed: {ex.Message}");
+                MessageBox.Show($"Connect failed: {ex.Message}", "Connection Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
