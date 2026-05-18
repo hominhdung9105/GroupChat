@@ -79,10 +79,12 @@ namespace GroupChat_Client.ViewModels
 
         private async void SendMessage()
         {
+            // Kiểm tra nếu tin nhắn rỗng hoặc chỉ toàn dấu cách
             if (string.IsNullOrWhiteSpace(MessageText))
                 return;
 
-            string content = MessageText;
+            // Lấy nội dung và Trim() khoảng trắng thừa 2 đầu
+            string content = MessageText.Trim();
 
             byte[] data = Encoding.UTF8.GetBytes(content);
 
@@ -93,11 +95,12 @@ namespace GroupChat_Client.ViewModels
                 Messages.Add(new ChatMessage
                 {
                     Sender = Username,
-                    Content = content,
+                    Content = content, // Hiển thị nội dung đã được Trim lên UI
                     SentAt = DateTime.Now,
                     IsOwnMessage = true
                 });
 
+                // Xóa text trong ô nhập sau khi gửi thành công
                 MessageText = string.Empty;
             }
             catch (Exception ex)

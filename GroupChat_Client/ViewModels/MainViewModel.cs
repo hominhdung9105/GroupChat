@@ -15,6 +15,7 @@ namespace GroupChat_Client.ViewModels
         private string _username = string.Empty;
         private string _serverIp = "127.0.0.1";
         private string _port = "5000";
+        private bool _isConnecting;
 
         public string Username
         {
@@ -46,6 +47,17 @@ namespace GroupChat_Client.ViewModels
             }
         }
 
+        // Property quản lý trạng thái đang kết nối (Loading)
+        public bool IsConnecting
+        {
+            get => _isConnecting;
+            set
+            {
+                _isConnecting = value;
+                OnPropertyChanged();
+            }
+        }
+
         public ICommand ConnectCommand { get; }
 
         public MainViewModel()
@@ -55,6 +67,9 @@ namespace GroupChat_Client.ViewModels
 
         private async void Connect()
         {
+            // Chặn ngay từ đầu nếu đang trong quá trình kết nối
+            if (IsConnecting) return;
+
             // 1. Trim dữ liệu để loại bỏ khoảng trắng thừa ở đầu và cuối
             string trimmedUsername = Username?.Trim() ?? string.Empty;
             string trimmedIp = ServerIp?.Trim() ?? string.Empty;
@@ -88,6 +103,9 @@ namespace GroupChat_Client.ViewModels
                 return;
             }
 
+            // Bật trạng thái loading để UI cập nhật giao diện (Disable nút, đổi chữ thành Connecting...)
+            IsConnecting = true;
+
             try
             {
                 TcpClient client = new TcpClient();
@@ -97,7 +115,7 @@ namespace GroupChat_Client.ViewModels
                 ChatWindow chatWindow = new ChatWindow(client, trimmedUsername, trimmedIp);
                 chatWindow.Show();
 
-                // Logic đóng cửa sổ an toàn đã làm ở bước trước
+                // Logic đóng cửa sổ an toàn
                 Application.Current.MainWindow = chatWindow;
                 foreach (Window window in Application.Current.Windows)
                 {
@@ -110,6 +128,11 @@ namespace GroupChat_Client.ViewModels
             catch (Exception ex)
             {
                 MessageBox.Show($"Connect failed: {ex.Message}", "Connection Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                // Luôn luôn tắt trạng thái loading sau khi hoàn tất (dù lỗi hay thành công)
+                IsConnecting = false;
             }
         }
 

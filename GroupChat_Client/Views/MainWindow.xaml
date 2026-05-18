@@ -84,25 +84,25 @@
                          BorderThickness="1"
                          Margin="0,0,0,30"/>
 
-                <Button Content="Connect"
-                        Height="45"
-                        FontSize="15"
-                        FontWeight="SemiBold"
-                        Background="#4F46E5"
-                        Foreground="White"
-                        BorderThickness="0"
-                        Cursor="Hand"
-                        Command="{Binding ConnectCommand}">
-
+                <Button Height="45"
+        FontSize="15"
+        FontWeight="SemiBold"
+        Foreground="White"
+        BorderThickness="0"
+        Cursor="Hand"
+        Command="{Binding ConnectCommand}">
                     <Button.Style>
                         <Style TargetType="Button">
+                            <Setter Property="Content" Value="Connect"/>
+                            <Setter Property="Background" Value="#4F46E5"/>
+
                             <Setter Property="Template">
                                 <Setter.Value>
                                     <ControlTemplate TargetType="Button">
                                         <Border Background="{TemplateBinding Background}"
-                                                CornerRadius="10">
+                                CornerRadius="10">
                                             <ContentPresenter HorizontalAlignment="Center"
-                                                              VerticalAlignment="Center"/>
+                                              VerticalAlignment="Center"/>
                                         </Border>
                                     </ControlTemplate>
                                 </Setter.Value>
@@ -112,12 +112,18 @@
                                 <Trigger Property="IsMouseOver" Value="True">
                                     <Setter Property="Background" Value="#6366F1"/>
                                 </Trigger>
+
+                                <DataTrigger Binding="{Binding IsConnecting}" Value="True">
+                                    <Setter Property="Content" Value="Connecting..."/>
+                                    <Setter Property="IsEnabled" Value="False"/>
+                                    <Setter Property="Background" Value="#555555"/>
+                                    <Setter Property="Foreground" Value="#AAAAAA"/>
+                                    <Setter Property="Cursor" Value="Wait"/>
+                                </DataTrigger>
                             </Style.Triggers>
                         </Style>
                     </Button.Style>
-
                 </Button>
-
             </StackPanel>
         </Border>
     </Grid>

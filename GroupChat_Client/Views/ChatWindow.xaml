@@ -93,6 +93,7 @@
                 Margin="0,0,0,15">
 
             <ListBox ItemsSource="{Binding Messages}"
+                     beh:ListBoxScrollBehavior.AutoScroll="True"
                      Background="#2A2A2A"
                      BorderThickness="0"
                      Foreground="White">
