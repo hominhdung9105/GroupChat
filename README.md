@@ -1,53 +1,108 @@
 # Group Chat Application
 
-A simple and modern group chat application built with C# using TCP Socket programming.
+A simple, robust, and modern group chat application built with C# using TCP Socket programming.
 
 The project includes:
 
-- A Console-based Chat Server
-- A WPF Chat Client with a modern, dark-themed UI
-- Clean MVVM architecture for the client side
+- A Console-based Asynchronous Chat Server
+- A WPF Chat Client with a modern, fully customized dark-themed UI
+- Clean MVVM architecture for the client-side
 
-## Features
+---
 
-- **Connection Management:** Connect to the server using a valid IP and Port
-- **Form Validation:** Input validation for Username, IP formatting, and Port ranges
-- **Real-time Messaging:** Send and receive messages instantly from other connected clients
-- **Emoji Support:** Built-in interactive emoji picker rendered in full color (powered by `Emoji.Wpf`)
-- **Smart Input:** Press `Enter` to send a message, or `Shift + Enter` to create a new line
-- **System Notifications:** Display system messages when users connect or disconnect from the room
-- **Clean Architecture:** Strict separation of UI and logic using MVVM pattern and Attached Behaviors
+## ✨ Features
 
-## Technologies Used
+### 💬 Real-time Messaging
+Send and receive messages instantly from other connected clients through TCP socket communication.
 
-- C# / .NET
+### 👥 Live Online Count
+Accurately tracks and displays the real-time number of active users currently connected to the chat room.
+
+### 😀 Advanced Emoji Support
+Includes a custom-built interactive emoji picker powered by `Emoji.Wpf`.
+
+Features:
+- Dynamically loads emoji data from a local `emoji.json` database
+- Horizontally scrollable category tabs
+- Hover animations and tooltips
+- Full-color emoji rendering
+
+### 🔄 Auto-Scrolling
+The chat list automatically scrolls to the newest message whenever a new message is received or sent.
+
+### 🛡 Connection Management & Safety
+- Prevents spam-clicking during connection attempts
+- Handles connection timeouts safely
+- Displays loading states while connecting
+- Supports IP and Port validation
+
+### ✅ Form Validation & Sanitization
+- Username validation
+- IPv4 format validation
+- Port range validation
+- Automatic message trimming before sending
+
+### ⌨ Smart Input
+- `Enter` → Send message
+- `Shift + Enter` → Create a new line
+
+### 📢 System Notifications
+Automatically broadcasts system messages when users join or leave the chat room.
+
+### 🧩 Clean MVVM Architecture
+Strict separation between UI and business logic using:
+- MVVM Pattern
+- Attached Behaviors
+- Commands
+- Data Binding
+
+---
+
+## 🛠 Technologies Used
+
+- C# / .NET 8.0+
 - WPF (Windows Presentation Foundation)
 - TCP Socket (`TcpListener` & `TcpClient`)
 - MVVM Pattern
-- NuGet Packages:
-  - `Emoji.Wpf`
+- JSON Serialization (`System.Text.Json`)
 
-## Project Structure
+### 📦 NuGet Packages
+
+- `Emoji.Wpf`
+
+---
+
+## 📂 Project Structure
 
 ```text
 GroupChat/
 ├── GroupChat_Client/
 │   ├── Behaviors/
-│   │   └── TextBoxEnterBehavior.cs
+│   │   ├── TextBoxEnterBehavior.cs
+│   │   └── ListBoxScrollBehavior.cs
+│   │
 │   ├── Commands/
 │   │   ├── RelayCommand.cs
 │   │   └── RelayCommand<T>.cs
+│   │
 │   ├── Models/
 │   │   ├── ChatMessage.cs
+│   │   ├── EmojiModel.cs
 │   │   └── EmojiProvider.cs
+│   │
 │   ├── ViewModels/
 │   │   ├── MainViewModel.cs
 │   │   └── ChatViewModel.cs
+│   │
 │   ├── Views/
 │   │   ├── MainWindow.xaml
 │   │   ├── MainWindow.xaml.cs
 │   │   ├── ChatWindow.xaml
 │   │   └── ChatWindow.xaml.cs
+│   │
+│   ├── db/
+│   │   └── emoji.json
+│   │
 │   ├── App.xaml
 │   └── App.xaml.cs
 │
@@ -58,17 +113,27 @@ GroupChat/
 └── README.md
 ```
 
-## How to Run
+---
 
-### 1. Restore Packages
+## 🚀 How to Run
 
-Before running the client, restore the NuGet packages for the project, especially the `Emoji.Wpf` package used in `GroupChat_Client`.
+### 1️⃣ Restore Packages
 
-### 2. Start the Server
+Before running the client project:
 
-Run the server project first.
+- Restore all NuGet packages
+- Make sure `Emoji.Wpf` is installed
+- Set `emoji.json` property to:
+  - **Build Action:** Content
+  - **Copy to Output Directory:** Copy if newer
 
-The server will display the IP address and port in the console.
+---
+
+### 2️⃣ Start the Server
+
+Run the `GroupChat_Server` project first.
+
+The server will display the assigned IP address and port.
 
 Example:
 
@@ -85,70 +150,115 @@ IP: 127.0.0.1    Port: 5000
 ==============================
 ```
 
-### 3. Start the Client
+---
 
-Run the WPF client project.
+### 3️⃣ Start the Client
+
+Run the `GroupChat_Client` WPF project.
 
 Enter the server information:
 
 ```text
-Username: user1
+Username: your_name
 Server IP: 127.0.0.1
 Port: 5000
 ```
 
 Then click **Connect**.
 
-### 4. Test Group Chat
+---
 
-To test group chat, open more than one client instance.
+### 4️⃣ Test Group Chat
 
-When `user1` sends a message, `user2` will receive it instantly.
+To test the application:
 
-## MVVM Explanation
+- Open multiple client instances
+- Connect them to the same server
+- Send messages between clients
 
-This project strictly adheres to the MVVM pattern.
+Features you can test:
+- Real-time messaging
+- Emoji picker
+- Online user counter
+- Auto-scrolling
+- Join/Leave system notifications
 
-### Model
+---
 
-Stores application data and states.
+## 🏗 MVVM Architecture
+
+This project strictly follows the MVVM (Model-View-ViewModel) pattern to ensure scalability and maintainability.
+
+### 📌 Model
+Stores application data and structures.
 
 Examples:
-
 - `ChatMessage`
+- `EmojiModel`
 - `EmojiProvider`
 
-### View
+---
 
-The UI files written in XAML.
+### 🎨 View
+Contains all UI layouts written in XAML.
 
 Examples:
-
 - `MainWindow.xaml`
 - `ChatWindow.xaml`
 
-Contains no business logic in the code-behind.
+The Views contain minimal or no business logic.
 
-### ViewModel
+---
 
-Handles UI logic, data binding, and commands.
+### 🧠 ViewModel
+Handles:
+- Socket communication
+- Data binding
+- Commands
+- Application logic
 
 Examples:
-
 - `MainViewModel`
 - `ChatViewModel`
 
-### Behaviors & Commands
+---
 
-Used to decouple UI events such as keyboard inputs from the ViewModels.
+### ⚡ Behaviors & Commands
+Used to decouple UI interactions from the ViewModels.
 
-## Notes
+Examples:
+- Sending messages with Enter key
+- Automatic list scrolling
+- Button commands
 
-- The server must be running before the client connects
-- If the server uses a random port (`Port = 0`), the client must enter the exact new port shown in the server console
-- If testing on the same computer, use `127.0.0.1` as the server IP
-- If testing on another computer in the same network, use the local network IP shown by the server (for example: `192.168.x.x`)
+---
 
-## Author
+## 💡 Notes
 
-Group Chat Client / Server project
+- The server must be running before any client connects
+- If the server uses a random port (`Port = 0`), clients must use the exact generated port
+- Use `127.0.0.1` if testing on the same computer
+- Use the local IPv4 address (`192.168.x.x`) for LAN testing
+
+---
+
+## 📸 Recommended Future Improvements
+
+Possible features to add in the future:
+
+- Private messaging
+- File sharing
+- Message history persistence
+- Authentication system
+- Encrypted communication
+- Voice chat support
+- Server room system
+- User avatars
+
+---
+
+## ✍️ Author
+
+**Group Chat Client / Server Project**
+
+Built with C#, WPF, TCP Socket, and MVVM architecture.
