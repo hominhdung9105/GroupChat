@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq; // Sử dụng cho cấu trúc IGrouping khi phân loại Emoji
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -22,6 +23,7 @@ namespace GroupChat_Client.ViewModels
         private string _messageText = string.Empty;
         private bool _isDisconnecting;
         private bool _isEmojiPickerOpen;
+        private int _onlineCount;
 
         public string Username { get; }
 
@@ -48,9 +50,18 @@ namespace GroupChat_Client.ViewModels
                 OnPropertyChanged();
             }
         }
+        public int OnlineCount
+        {
+            get => _onlineCount;
+            set
+            {
+                _onlineCount = value;
+                OnPropertyChanged();
+            }
+        }
 
-        // Lấy danh sách trực tiếp từ Model dữ liệu tĩnh
-        public List<string> AvailableEmojis { get; } = EmojiProvider.GetEmojis();
+        // Lấy danh sách Emoji đã được nhóm theo Category từ file JSON
+        public List<IGrouping<string, EmojiModel>> GroupedEmojis { get; } = EmojiProvider.GetGroupedEmojis();
 
         public ICommand SendCommand { get; }
         public ICommand BackCommand { get; }
@@ -67,7 +78,7 @@ namespace GroupChat_Client.ViewModels
 
             SendCommand = new RelayCommand(SendMessage);
             BackCommand = new RelayCommand(BackToMain);
-            EmojiCommand = new RelayCommand(ShowEmojiPicker);
+            EmojiCommand = new RelayCommand(() => IsEmojiPickerOpen = !IsEmojiPickerOpen);
             InsertEmojiCommand = new RelayCommand<string>(InsertEmoji);
 
             // Gửi username lên server ngay khi vào ChatWindow
@@ -79,11 +90,10 @@ namespace GroupChat_Client.ViewModels
 
         private async void SendMessage()
         {
-            // Kiểm tra nếu tin nhắn rỗng hoặc chỉ toàn dấu cách
             if (string.IsNullOrWhiteSpace(MessageText))
                 return;
 
-            // Lấy nội dung và Trim() khoảng trắng thừa 2 đầu
+            // Loại bỏ các khoảng trắng thừa ở hai đầu tin nhắn trước khi gửi đi
             string content = MessageText.Trim();
 
             byte[] data = Encoding.UTF8.GetBytes(content);
@@ -95,12 +105,11 @@ namespace GroupChat_Client.ViewModels
                 Messages.Add(new ChatMessage
                 {
                     Sender = Username,
-                    Content = content, // Hiển thị nội dung đã được Trim lên UI
+                    Content = content,
                     SentAt = DateTime.Now,
                     IsOwnMessage = true
                 });
 
-                // Xóa text trong ô nhập sau khi gửi thành công
                 MessageText = string.Empty;
             }
             catch (Exception ex)
@@ -133,6 +142,15 @@ namespace GroupChat_Client.ViewModels
 
                         if (parts.Length == 2)
                         {
+                            if (parts[0] == "USERS_COUNT")
+                            {
+                                if (int.TryParse(parts[1], out int count))
+                                {
+                                    OnlineCount = count;
+                                }
+                                return; // Kết thúc sớm, không add tin nhắn này vào UI
+                            }
+
                             sender = parts[0];
                             content = parts[1];
                         }
@@ -169,17 +187,11 @@ namespace GroupChat_Client.ViewModels
             }
         }
 
-        private void ShowEmojiPicker()
-        {
-            // Thay đổi trạng thái đóng/mở của Popup
-            IsEmojiPickerOpen = !IsEmojiPickerOpen;
-        }
-
         private void InsertEmoji(string? emoji)
         {
             if (!string.IsNullOrEmpty(emoji))
             {
-                // Cộng chuỗi emoji trực tiếp vào TextBox đang bind
+                // Cộng chuỗi emoji trực tiếp vào ô chat hiện tại mà không làm đóng Popup
                 MessageText += emoji;
             }
         }

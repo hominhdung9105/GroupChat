@@ -115,6 +115,8 @@ class AsyncChatServer
 
             await BroadcastAsync($"System|{username} connected");
 
+            await BroadcastAsync($"USERS_COUNT|{clients.Count}");
+
             while (true)
             {
                 int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
@@ -142,6 +144,8 @@ class AsyncChatServer
             Console.WriteLine($"{username} disconnected");
 
             await BroadcastAsync($"System|{username} disconnected");
+
+            await BroadcastAsync($"USERS_COUNT|{clients.Count}");
         }
     }
 
