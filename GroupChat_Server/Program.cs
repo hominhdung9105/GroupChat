@@ -89,21 +89,34 @@ class AsyncChatServer
     static async Task HandleClientAsync(int id, TcpClient client)
     {
         NetworkStream stream = client.GetStream();
-
         byte[] buffer = new byte[4096];
-
         string username = $"Client {id}";
 
         try
         {
             // Tin nhắn đầu tiên client gửi lên sẽ là username
             int usernameBytes = await stream.ReadAsync(buffer, 0, buffer.Length);
-
-            if (usernameBytes == 0)
-                return;
+            if (usernameBytes == 0) return;
 
             username = Encoding.UTF8.GetString(buffer, 0, usernameBytes).Trim();
 
+            // THÊM MỚI: Kiểm tra xem tên đã tồn tại chưa (không phân biệt hoa/thường)
+            bool isDuplicate = clients.Values.Any(c => c.Username.Equals(username, StringComparison.OrdinalIgnoreCase));
+
+            if (isDuplicate)
+            {
+                Console.WriteLine($"Connection rejected: Username '{username}' already exists.");
+
+                // Gửi thông báo lỗi về cho Client bị trùng tên
+                byte[] errorData = Encoding.UTF8.GetBytes("ERROR|Tên người dùng này đã có trong phòng. Vui lòng chọn tên khác!\n");
+                await stream.WriteAsync(errorData, 0, errorData.Length);
+
+                // Đóng kết nối của người này và dừng hàm lại
+                client.Close();
+                return;
+            }
+
+            // Nếu không trùng thì mới thêm vào danh sách và đi tiếp
             clients[id] = new ClientInfo
             {
                 Id = id,
@@ -112,10 +125,7 @@ class AsyncChatServer
             };
 
             Console.WriteLine($"{username} connected");
-
             await BroadcastAsync($"System|{username} connected");
-
-            await BroadcastAsync($"USERS_COUNT|{clients.Count}");
 
             while (true)
             {
