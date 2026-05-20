@@ -175,12 +175,17 @@ class AsyncChatServer
 
             client.Close();
 
-            Console.WriteLine($"{username} disconnected");
+            // CHỈ thông báo disconnect và cập nhật lại số người nếu trước đó họ đã vào phòng thành công
+            if (isJoinedSuccessfully)
+            {
+                Console.WriteLine($"{username} disconnected");
 
             // Notify everyone
             await BroadcastAsync($"System|{username} disconnected");
 
-            await BroadcastAsync($"USERS_COUNT|{clients.Count}");
+                // Phát tín hiệu cập nhật số người khi có người RỜI ĐI
+                await BroadcastAsync($"USERS_COUNT|{clients.Count}");
+            }
         }
     }
 

@@ -144,13 +144,28 @@ namespace GroupChat_Client.ViewModels
 
                         if (parts.Length == 2)
                         {
+                            // THÊM MỚI: Bắt tín hiệu lỗi từ Server (Trùng tên)
+                            if (parts[0] == "ERROR")
+                            {
+                                Application.Current.Dispatcher.Invoke(() =>
+                                {
+                                    // Hiện popup cảnh báo
+                                    MessageBox.Show(parts[1], "Login Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+
+                                    // Đẩy người dùng về lại MainWindow
+                                    BackToMain();
+                                });
+                                return; // Thoát không xử lý tiếp
+                            }
+
+                            // Đã có từ bước trước (Cập nhật số người online)
                             if (parts[0] == "USERS_COUNT")
                             {
                                 if (int.TryParse(parts[1], out int count))
                                 {
                                     OnlineCount = count;
                                 }
-                                return; // Kết thúc sớm, không add tin nhắn này vào UI
+                                return;
                             }
 
                             sender = parts[0];
