@@ -100,7 +100,7 @@ class AsyncChatServer
 
             username = Encoding.UTF8.GetString(buffer, 0, usernameBytes).Trim();
 
-            // THÊM MỚI: Kiểm tra xem tên đã tồn tại chưa (không phân biệt hoa/thường)
+            // Kiểm tra xem tên đã tồn tại chưa (không phân biệt hoa/thường)
             bool isDuplicate = clients.Values.Any(c => c.Username.Equals(username, StringComparison.OrdinalIgnoreCase));
 
             if (isDuplicate)
@@ -111,7 +111,7 @@ class AsyncChatServer
                 byte[] errorData = Encoding.UTF8.GetBytes("ERROR|Tên người dùng này đã có trong phòng. Vui lòng chọn tên khác!\n");
                 await stream.WriteAsync(errorData, 0, errorData.Length);
 
-                // Đóng kết nối của người này và dừng hàm lại
+                // Đóng kết nối của người này và dừng hàm lại (Nó sẽ nhảy xuống khối finally)
                 client.Close();
                 return;
             }
@@ -126,6 +126,9 @@ class AsyncChatServer
 
             Console.WriteLine($"{username} connected");
             await BroadcastAsync($"System|{username} connected");
+
+            // FIX LỖI 1: Phải phát tín hiệu cập nhật số người cho mọi người khi có người VÀO THÀNH CÔNG
+            await BroadcastAsync($"USERS_COUNT|{clients.Count}");
 
             while (true)
             {
@@ -147,15 +150,22 @@ class AsyncChatServer
         }
         finally
         {
-            clients.TryRemove(id, out _);
+            // FIX LỖI 2: Hàm TryRemove sẽ trả về TRUE nếu ID này có trong danh sách (Tức là đã vào thành công)
+            // Nếu người này bị từ chối do trùng tên ở trên, TryRemove sẽ trả về FALSE.
+            bool isJoinedSuccessfully = clients.TryRemove(id, out _);
 
             client.Close();
 
-            Console.WriteLine($"{username} disconnected");
+            // CHỈ thông báo disconnect và cập nhật lại số người nếu trước đó họ đã vào phòng thành công
+            if (isJoinedSuccessfully)
+            {
+                Console.WriteLine($"{username} disconnected");
 
-            await BroadcastAsync($"System|{username} disconnected");
+                await BroadcastAsync($"System|{username} disconnected");
 
-            await BroadcastAsync($"USERS_COUNT|{clients.Count}");
+                // Phát tín hiệu cập nhật số người khi có người RỜI ĐI
+                await BroadcastAsync($"USERS_COUNT|{clients.Count}");
+            }
         }
     }
 
