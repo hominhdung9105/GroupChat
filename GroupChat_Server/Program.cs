@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
@@ -10,21 +11,23 @@ using System.Threading.Tasks;
 
 class AsyncChatServer
 {
+    // Server listener
     static TcpListener listener = null!;
 
+    // Danh sách client đang online
     static ConcurrentDictionary<int, ClientInfo> clients = new();
 
+    // Tăng id tự động cho mỗi client
     static int nextId = 0;
 
     static async Task Main()
     {
-        // Port = 0 nghĩa là hệ điều hành tự chọn port trống ngẫu nhiên
-        listener = new TcpListener(IPAddress.Any, 0);
+        // FIXED PORT cho dễ test
+        int port = 5000;
+
+        listener = new TcpListener(IPAddress.Any, port);
 
         listener.Start();
-
-        IPEndPoint endPoint = (IPEndPoint)listener.LocalEndpoint;
-        int port = endPoint.Port;
 
         Console.WriteLine("Server started");
         Console.WriteLine("==============================");
@@ -51,6 +54,9 @@ class AsyncChatServer
 
             int id = Interlocked.Increment(ref nextId);
 
+            Console.WriteLine($"New socket connected -> ID: {id}");
+
+            // Chạy riêng cho từng client
             _ = HandleClientAsync(id, client);
         }
     }
@@ -90,44 +96,71 @@ class AsyncChatServer
     {
         NetworkStream stream = client.GetStream();
 
-        byte[] buffer = new byte[4096];
+        // FIX:
+        // Dùng line-based protocol thay vì raw byte buffer
+        StreamReader reader = new StreamReader(stream, Encoding.UTF8);
+
+        StreamWriter writer = new StreamWriter(stream, Encoding.UTF8)
+        {
+            AutoFlush = true
+        };
 
         string username = $"Client {id}";
 
         try
         {
-            // Tin nhắn đầu tiên client gửi lên sẽ là username
-            int usernameBytes = await stream.ReadAsync(buffer, 0, buffer.Length);
+            // =========================
+            // RECEIVE USERNAME
+            // =========================
 
-            if (usernameBytes == 0)
+            string? usernameLine = await reader.ReadLineAsync();
+
+            if (string.IsNullOrWhiteSpace(usernameLine))
                 return;
 
-            username = Encoding.UTF8.GetString(buffer, 0, usernameBytes).Trim();
+            username = usernameLine.Trim();
 
+            // Lưu client
             clients[id] = new ClientInfo
             {
                 Id = id,
                 Username = username,
-                Client = client
+                Client = client,
+                Reader = reader,
+                Writer = writer
             };
 
             Console.WriteLine($"{username} connected");
 
+            // Broadcast system message
             await BroadcastAsync($"System|{username} connected");
 
+            // Broadcast online count
             await BroadcastAsync($"USERS_COUNT|{clients.Count}");
+
+            // =========================
+            // RECEIVE LOOP
+            // =========================
 
             while (true)
             {
-                int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
+                // FIX:
+                // ReadLineAsync đảm bảo:
+                // 1 dòng = 1 message
+                string? message = await reader.ReadLineAsync();
 
-                if (bytesRead == 0)
+                // Client disconnected
+                if (message == null)
                     break;
 
-                string message = Encoding.UTF8.GetString(buffer, 0, bytesRead).Trim();
+                message = message.Trim();
+
+                if (string.IsNullOrWhiteSpace(message))
+                    continue;
 
                 Console.WriteLine($"{username}: {message}");
 
+                // Broadcast chat message
                 await BroadcastAsync($"{username}|{message}");
             }
         }
@@ -137,12 +170,14 @@ class AsyncChatServer
         }
         finally
         {
+            // Remove client
             clients.TryRemove(id, out _);
 
             client.Close();
 
             Console.WriteLine($"{username} disconnected");
 
+            // Notify everyone
             await BroadcastAsync($"System|{username} disconnected");
 
             await BroadcastAsync($"USERS_COUNT|{clients.Count}");
@@ -151,21 +186,20 @@ class AsyncChatServer
 
     static async Task BroadcastAsync(string message)
     {
-        byte[] data = Encoding.UTF8.GetBytes(message + "\n");
-
         List<int> deadClients = new();
 
         foreach (var pair in clients)
         {
             int id = pair.Key;
 
-            TcpClient client = pair.Value.Client;
+            ClientInfo clientInfo = pair.Value;
 
             try
             {
-                NetworkStream stream = client.GetStream();
-
-                await stream.WriteAsync(data, 0, data.Length);
+                // FIX:
+                // WriteLineAsync tự thêm '\n'
+                // => protocol ổn định hơn
+                await clientInfo.Writer.WriteLineAsync(message);
             }
             catch
             {
@@ -173,11 +207,14 @@ class AsyncChatServer
             }
         }
 
+        // Remove dead clients
         foreach (int id in deadClients)
         {
             if (clients.TryRemove(id, out ClientInfo? dead))
             {
                 dead.Client.Close();
+
+                Console.WriteLine($"{dead.Username} force removed");
             }
         }
     }
@@ -190,4 +227,11 @@ class ClientInfo
     public string Username { get; set; } = string.Empty;
 
     public TcpClient Client { get; set; } = null!;
+
+    // FIX:
+    // Giữ persistent reader/writer
+    // tránh tạo lại liên tục
+    public StreamReader Reader { get; set; } = null!;
+
+    public StreamWriter Writer { get; set; } = null!;
 }

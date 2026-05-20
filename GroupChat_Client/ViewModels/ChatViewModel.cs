@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.IO;
 
 namespace GroupChat_Client.ViewModels
 {
@@ -19,6 +20,8 @@ namespace GroupChat_Client.ViewModels
     {
         private readonly TcpClient _client;
         private readonly NetworkStream _stream;
+        private readonly StreamReader _reader;
+        private readonly StreamWriter _writer;
 
         private string _messageText = string.Empty;
         private bool _isDisconnecting;
@@ -72,6 +75,11 @@ namespace GroupChat_Client.ViewModels
         {
             _client = client;
             _stream = client.GetStream();
+            _reader = new StreamReader(_stream, Encoding.UTF8);
+            _writer = new StreamWriter(_stream, Encoding.UTF8)
+            {
+                AutoFlush = true
+            };
 
             Username = username;
             ServerIp = serverIp;
@@ -82,8 +90,7 @@ namespace GroupChat_Client.ViewModels
             InsertEmojiCommand = new RelayCommand<string>(InsertEmoji);
 
             // Gửi username lên server ngay khi vào ChatWindow
-            byte[] usernameData = Encoding.UTF8.GetBytes(Username);
-            _stream.Write(usernameData, 0, usernameData.Length);
+            _writer.WriteLine(Username);
 
             _ = ReceiveMessagesAsync();
         }
@@ -93,14 +100,11 @@ namespace GroupChat_Client.ViewModels
             if (string.IsNullOrWhiteSpace(MessageText))
                 return;
 
-            // Loại bỏ các khoảng trắng thừa ở hai đầu tin nhắn trước khi gửi đi
             string content = MessageText.Trim();
-
-            byte[] data = Encoding.UTF8.GetBytes(content);
 
             try
             {
-                await _stream.WriteAsync(data, 0, data.Length);
+                await _writer.WriteLineAsync(content);
 
                 Messages.Add(new ChatMessage
                 {
@@ -126,12 +130,10 @@ namespace GroupChat_Client.ViewModels
             {
                 while (true)
                 {
-                    int bytesRead = await _stream.ReadAsync(buffer, 0, buffer.Length);
+                    string? message = await _reader.ReadLineAsync();
 
-                    if (bytesRead == 0)
+                    if (message == null)
                         break;
-
-                    string message = Encoding.UTF8.GetString(buffer, 0, bytesRead).Trim();
 
                     Application.Current.Dispatcher.Invoke(() =>
                     {
