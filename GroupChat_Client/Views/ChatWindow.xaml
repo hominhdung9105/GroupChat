@@ -125,19 +125,29 @@
                      Background="#2A2A2A"
                      BorderThickness="0"
                      Foreground="White">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsOwnMessage}" Value="False">
+                                <Setter Property="HorizontalContentAlignment" Value="Right"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ListBox.ItemContainerStyle>
 
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Margin="0,0,0,12">
                             <StackPanel.Style>
                                 <Style TargetType="StackPanel">
-                                    <Setter Property="HorizontalAlignment" Value="Right"/>
+                                    <Setter Property="HorizontalAlignment" Value="Left"/>
                                     <Setter Property="MaxWidth" Value="520"/>
-                                    <Setter Property="TextBlock.TextAlignment" Value="Right"/>
+                                    <Setter Property="TextBlock.TextAlignment" Value="Left"/>
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsOwnMessage}" Value="True">
-                                            <Setter Property="HorizontalAlignment" Value="Left"/>
-                                            <Setter Property="TextBlock.TextAlignment" Value="Left"/>
+                                        <DataTrigger Binding="{Binding IsOwnMessage}" Value="False">
+                                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                                            <Setter Property="TextBlock.TextAlignment" Value="Right"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
