@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.IO;
 
 class AsyncChatServer
 {
@@ -89,16 +90,21 @@ class AsyncChatServer
     static async Task HandleClientAsync(int id, TcpClient client)
     {
         NetworkStream stream = client.GetStream();
-        byte[] buffer = new byte[4096];
+        using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, bufferSize: 1024, leaveOpen: true);
+        using var writer = new StreamWriter(stream, Encoding.UTF8, 1024, leaveOpen: true)
+        {
+            AutoFlush = true
+        };
         string username = $"Client {id}";
 
         try
         {
             // Tin nhắn đầu tiên client gửi lên sẽ là username
-            int usernameBytes = await stream.ReadAsync(buffer, 0, buffer.Length);
-            if (usernameBytes == 0) return;
+            string? usernameLine = await reader.ReadLineAsync();
+            if (string.IsNullOrWhiteSpace(usernameLine))
+                return;
 
-            username = Encoding.UTF8.GetString(buffer, 0, usernameBytes).Trim();
+            username = usernameLine.Trim();
 
             // Kiểm tra xem tên đã tồn tại chưa (không phân biệt hoa/thường)
             bool isDuplicate = clients.Values.Any(c => c.Username.Equals(username, StringComparison.OrdinalIgnoreCase));
@@ -121,27 +127,29 @@ class AsyncChatServer
             {
                 Id = id,
                 Username = username,
-                Client = client
+                Client = client,
+                Writer = writer
             };
 
             Console.WriteLine($"{username} connected");
-            await BroadcastAsync($"System|{username} connected");
+            await BroadcastAsync($"TEXT|System|{username} connected");
 
             // FIX LỖI 1: Phải phát tín hiệu cập nhật số người cho mọi người khi có người VÀO THÀNH CÔNG
             await BroadcastAsync($"USERS_COUNT|{clients.Count}");
 
             while (true)
             {
-                int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
+                string? message = await reader.ReadLineAsync();
 
-                if (bytesRead == 0)
+                if (message == null)
                     break;
 
-                string message = Encoding.UTF8.GetString(buffer, 0, bytesRead).Trim();
+                if (string.IsNullOrWhiteSpace(message))
+                    continue;
 
                 Console.WriteLine($"{username}: {message}");
 
-                await BroadcastAsync($"{username}|{message}");
+                await BroadcastAsync(message);
             }
         }
         catch (Exception ex)
@@ -161,7 +169,7 @@ class AsyncChatServer
             {
                 Console.WriteLine($"{username} disconnected");
 
-                await BroadcastAsync($"System|{username} disconnected");
+                await BroadcastAsync($"TEXT|System|{username} disconnected");
 
                 // Phát tín hiệu cập nhật số người khi có người RỜI ĐI
                 await BroadcastAsync($"USERS_COUNT|{clients.Count}");
@@ -180,12 +188,11 @@ class AsyncChatServer
             int id = pair.Key;
 
             TcpClient client = pair.Value.Client;
+            StreamWriter writer = pair.Value.Writer;
 
             try
             {
-                NetworkStream stream = client.GetStream();
-
-                await stream.WriteAsync(data, 0, data.Length);
+                await writer.WriteLineAsync(message);
             }
             catch
             {
@@ -210,4 +217,6 @@ class ClientInfo
     public string Username { get; set; } = string.Empty;
 
     public TcpClient Client { get; set; } = null!;
+
+    public StreamWriter Writer { get; set; } = null!;
 }
