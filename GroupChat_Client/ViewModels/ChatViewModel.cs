@@ -120,18 +120,26 @@ namespace GroupChat_Client.ViewModels
 
         private async Task ReceiveMessagesAsync()
         {
-            byte[] buffer = new byte[4096];
-
             try
             {
+                // SỬ DỤNG STREAMREADER: Giải quyết triệt để lỗi "Dính gói tin" của TCP
+                // Nó sẽ tự động đọc từng tin nhắn cách nhau bởi dấu \n
+                using var reader = new System.IO.StreamReader(_stream, Encoding.UTF8, leaveOpen: true);
+
                 while (true)
                 {
-                    int bytesRead = await _stream.ReadAsync(buffer, 0, buffer.Length);
+                    // Đọc từng dòng thay vì đọc cả cục buffer
+                    string? message = await reader.ReadLineAsync();
 
-                    if (bytesRead == 0)
+                    // Nếu nhận được null nghĩa là Server đã ngắt kết nối
+                    if (message == null)
                         break;
 
-                    string message = Encoding.UTF8.GetString(buffer, 0, bytesRead).Trim();
+                    message = message.Trim();
+
+                    // Bỏ qua nếu là dòng trống
+                    if (string.IsNullOrWhiteSpace(message))
+                        continue;
 
                     Application.Current.Dispatcher.Invoke(() =>
                     {
@@ -142,21 +150,18 @@ namespace GroupChat_Client.ViewModels
 
                         if (parts.Length == 2)
                         {
-                            // THÊM MỚI: Bắt tín hiệu lỗi từ Server (Trùng tên)
+                            // 1. Bắt lỗi trùng tên
                             if (parts[0] == "ERROR")
                             {
                                 Application.Current.Dispatcher.Invoke(() =>
                                 {
-                                    // Hiện popup cảnh báo
                                     MessageBox.Show(parts[1], "Login Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
-
-                                    // Đẩy người dùng về lại MainWindow
                                     BackToMain();
                                 });
-                                return; // Thoát không xử lý tiếp
+                                return;
                             }
 
-                            // Đã có từ bước trước (Cập nhật số người online)
+                            // 2. Cập nhật số người online
                             if (parts[0] == "USERS_COUNT")
                             {
                                 if (int.TryParse(parts[1], out int count))
@@ -170,7 +175,7 @@ namespace GroupChat_Client.ViewModels
                             content = parts[1];
                         }
 
-                        // Tránh hiện lại tin nhắn của chính mình nếu server broadcast về lại
+                        // Tránh hiện lại tin nhắn của chính mình
                         if (sender == Username)
                             return;
 
