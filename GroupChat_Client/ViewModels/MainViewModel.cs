@@ -65,11 +65,8 @@ namespace GroupChat_Client.ViewModels
             ConnectCommand = new RelayCommand(Connect);
         }
 
-        private async void Connect()
+        private void Connect()
         {
-            // Chặn ngay từ đầu nếu đang trong quá trình kết nối
-            if (IsConnecting) return;
-
             // 1. Trim dữ liệu để loại bỏ khoảng trắng thừa ở đầu và cuối
             string trimmedUsername = Username?.Trim() ?? string.Empty;
             string trimmedIp = ServerIp?.Trim() ?? string.Empty;
@@ -80,59 +77,68 @@ namespace GroupChat_Client.ViewModels
             ServerIp = trimmedIp;
             Port = trimmedPort;
 
-            // 3. Validate Username
-            if (string.IsNullOrWhiteSpace(trimmedUsername))
+            // Bước 1: Validate (Kiểm tra) dữ liệu đầu vào cơ bản
+            if (string.IsNullOrWhiteSpace(Username))
             {
-                MessageBox.Show("Please enter a valid username.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Username cannot be empty", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
-            // 4. Validate Server IP (Kiểm tra xem chuỗi nhập vào có phải là một địa chỉ IP hợp lệ không)
-            if (string.IsNullOrWhiteSpace(trimmedIp) || !IPAddress.TryParse(trimmedIp, out IPAddress? parsedIp))
+            if (string.IsNullOrWhiteSpace(ServerIp) || !IPAddress.TryParse(ServerIp, out _))
             {
-                MessageBox.Show("Please enter a valid Server IP address (e.g., 127.0.0.1).", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Invalid IP Address", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
-            // 5. Validate Port (Kiểm tra xem có phải là số và nằm trong dải port hợp lệ 1 - 65535 không)
-            if (string.IsNullOrWhiteSpace(trimmedPort) ||
-                !int.TryParse(trimmedPort, out int portNumber) ||
-                portNumber < 1 || portNumber > 65535)
+            if (!int.TryParse(Port, out int port) || port <= 0 || port > 65535)
             {
-                MessageBox.Show("Please enter a valid port number (1 - 65535).", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Invalid Port Number", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
-            // Bật trạng thái loading để UI cập nhật giao diện (Disable nút, đổi chữ thành Connecting...)
+            // Bắt đầu trạng thái Connecting (Hiện Loading Spinner nếu có)
             IsConnecting = true;
 
             try
             {
+                // Bước 2: Tạo kết nối TcpClient tới Server
                 TcpClient client = new TcpClient();
-                // Sử dụng trimmedIp thay vì ServerIp cũ để đảm bảo an toàn
-                await client.ConnectAsync(trimmedIp, portNumber);
+                client.Connect(ServerIp, port);
 
-                ChatWindow chatWindow = new ChatWindow(client, trimmedUsername, trimmedIp);
-                chatWindow.Show();
-
-                // Logic đóng cửa sổ an toàn
-                Application.Current.MainWindow = chatWindow;
-                foreach (Window window in Application.Current.Windows)
+                // THÊM MỚI (FIX LỖI): Thiết lập luồng ẩn/hiện Window an toàn
+                Application.Current.Dispatcher.Invoke(() =>
                 {
-                    if (window is MainWindow)
-                    {
-                        window.Close();
-                    }
-                }
+                    // Lấy tham chiếu đến cái MainWindow đang hiển thị lúc này
+                    Window currentMainWindow = Application.Current.MainWindow;
+
+                    // Khởi tạo ChatWindow và truyền các tham số vào
+                    ChatWindow chatWindow = new ChatWindow(client, Username, ServerIp);
+
+                    // ẨN MainWindow đi (Thay vì dùng lệnh Close() gây chết Window)
+                    currentMainWindow.Hide();
+
+                    // Tắt trạng thái Loading
+                    IsConnecting = false;
+
+                    // HIỆN ChatWindow lên và "CHỜ" người dùng tương tác trong đó.
+                    // Hàm ShowDialog() sẽ chặn code đứng im tại dòng này cho đến khi 
+                    // ChatWindow bị tắt (Bấm Back, lỗi trùng tên văng ra, hoặc ấn nút X)
+                    chatWindow.ShowDialog();
+
+                    // MỘT KHI DÒNG NÀY ĐƯỢC CHẠY (Nghĩa là ChatWindow đã biến mất):
+                    // Ta an toàn gọi lệnh Show() để bật lại MainWindow cũ!
+                    currentMainWindow.Show();
+                });
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Connect failed: {ex.Message}", "Connection Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                // Luôn luôn tắt trạng thái loading sau khi hoàn tất (dù lỗi hay thành công)
                 IsConnecting = false;
+
+                // Nếu không thể kết nối tới Server (Sai IP, Server chưa bật...)
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    MessageBox.Show($"Connect failed: {ex.Message}", "Connection Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                });
             }
         }
 

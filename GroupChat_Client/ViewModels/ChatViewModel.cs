@@ -155,8 +155,9 @@ namespace GroupChat_Client.ViewModels
                             {
                                 Application.Current.Dispatcher.Invoke(() =>
                                 {
-                                    MessageBox.Show(parts[1], "Login Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
-                                    BackToMain();
+                                    var result = MessageBox.Show(parts[1], "Login Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+                                    if (result.Equals(MessageBoxResult.OK))
+                                        BackToMain();
                                 });
                                 return;
                             }
@@ -219,25 +220,18 @@ namespace GroupChat_Client.ViewModels
         private void BackToMain()
         {
             _isDisconnecting = true;
-
             try
             {
                 _stream.Close();
                 _client.Close();
             }
-            catch
-            {
-            }
+            catch { }
 
             Application.Current.Dispatcher.Invoke(() =>
             {
-                MainWindow mainWindow = new MainWindow();
-                mainWindow.Show();
+                // XÓA ĐOẠN TẠO MAINWINDOW MỚI Ở ĐÂY!
 
-                // Đặt cửa sổ chính mới
-                Application.Current.MainWindow = mainWindow;
-
-                // Quét và đóng triệt để tất cả ChatWindow đang mở
+                // Chỉ tìm và đóng ChatWindow hiện tại thôi
                 foreach (Window window in Application.Current.Windows)
                 {
                     if (window is ChatWindow)

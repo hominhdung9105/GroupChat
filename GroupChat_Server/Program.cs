@@ -40,10 +40,10 @@ class AsyncChatServer
             Console.WriteLine($"IP: {ip}    Port: {port}");
         }
 
-        Console.WriteLine();
-        Console.WriteLine("If client is on the same computer:");
-        Console.WriteLine($"IP: 127.0.0.1    Port: {port}");
-        Console.WriteLine("==============================");
+        //Console.WriteLine();
+        //Console.WriteLine("If client is on the same computer:");
+        //Console.WriteLine($"IP: 127.0.0.1    Port: {port}");
+        //Console.WriteLine("==============================");
 
         while (true)
         {
