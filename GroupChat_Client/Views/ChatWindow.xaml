@@ -9,18 +9,22 @@
         Drop="ChatWindow_OnDrop"
         Title="Group Chat"
         Height="800"
-        Width="800"
+        Width="1000"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         Background="#1E1E1E">
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+        <RowDefinition Height="Auto"/>
+        <!-- header -->
+        <RowDefinition Height="*"/>
+        <!-- body -->
+        <RowDefinition Height="Auto"/>
+        <!-- input -->
         </Grid.RowDefinitions>
 
+        
         <Border Grid.Row="0"
                 Background="#2A2A2A"
                 CornerRadius="14"
@@ -41,6 +45,7 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
+                    
                     <Button Grid.Column="0"
                             Content="Back"
                             Height="36"
@@ -113,24 +118,37 @@
                 </Grid>
             </Grid>
         </Border>
+        
 
-        <Border Grid.Row="1"
-                Background="#2A2A2A"
-                CornerRadius="14"
-                Padding="15"
-                Margin="0,0,0,15">
 
-            <ListBox ItemsSource="{Binding Messages}"
-                     beh:ListBoxScrollBehavior.AutoScroll="True"
-                     Background="#2A2A2A"
-                     BorderThickness="0"
-                     Foreground="White">
+        <Grid Grid.Row="1"
+              Margin="0,0,0,15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3*"/>
+                <ColumnDefinition Width="12"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0"
+                    Background="#2A2A2A"
+                    CornerRadius="14"
+                    Padding="15">
+
+                <ListBox ItemsSource="{Binding Messages}"
+                         beh:ListBoxScrollBehavior.AutoScroll="True"
+                         Background="#2A2A2A"
+                         BorderThickness="0"
+                         Foreground="White">
                 <ListBox.ItemContainerStyle>
                     <Style TargetType="ListBoxItem">
                         <Setter Property="HorizontalContentAlignment" Value="Left"/>
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsOwnMessage}" Value="False">
+                            <DataTrigger Binding="{Binding IsOwnMessage}" Value="True">
                                 <Setter Property="HorizontalContentAlignment" Value="Right"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding MessageKind}" 
+                         Value="{x:Static models:ChatMessageKind.System}">
+                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
@@ -139,15 +157,21 @@
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Margin="0,0,0,12">
+                            
                             <StackPanel.Style>
                                 <Style TargetType="StackPanel">
                                     <Setter Property="HorizontalAlignment" Value="Left"/>
                                     <Setter Property="MaxWidth" Value="520"/>
                                     <Setter Property="TextBlock.TextAlignment" Value="Left"/>
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsOwnMessage}" Value="False">
+                                        <DataTrigger Binding="{Binding IsOwnMessage}" Value="True">
                                             <Setter Property="HorizontalAlignment" Value="Right"/>
                                             <Setter Property="TextBlock.TextAlignment" Value="Right"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding MessageKind}" 
+                     Value="{x:Static models:ChatMessageKind.System}">
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                            <Setter Property="TextBlock.TextAlignment" Value="Center"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -175,10 +199,17 @@
                                                     <Setter.Value>
                                                         <DataTemplate>
                                                             <StackPanel>
-                                                                <Image Source="{Binding ImagePath}"
-                                                                       Stretch="Uniform"
-                                                                       MaxHeight="260"
-                                                                       Margin="0,6,0,6"/>
+                                                                <Button Background="Transparent"
+                                                                        BorderThickness="0"
+                                                                        Padding="0"
+                                                                        HorizontalAlignment="Left"
+                                                                        Command="{Binding DataContext.OpenImageCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                                        CommandParameter="{Binding ImagePath}">
+                                                                    <Image Source="{Binding ImagePath}"
+                                                                           Stretch="Uniform"
+                                                                           MaxHeight="260"
+                                                                           Margin="0,6,0,6"/>
+                                                                </Button>
                                                                 <ProgressBar Height="6"
                                                                              Maximum="100"
                                                                              Value="{Binding ProgressPercent}"
@@ -255,8 +286,39 @@
                         </StackPanel>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
-            </ListBox>
-        </Border>
+                </ListBox>
+            </Border>
+
+            <Border Grid.Column="2"
+                    Background="#2A2A2A"
+                    CornerRadius="14"
+                    Padding="12">
+                <StackPanel>
+                    <TextBlock Text="Members"
+                               Foreground="White"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,10"/>
+                    <ListBox ItemsSource="{Binding OnlineUsers}"
+                             Background="#2A2A2A"
+                             BorderThickness="0"
+                             Foreground="White">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="#333333"
+                                        CornerRadius="8"
+                                        Padding="8"
+                                        Margin="0,0,0,8">
+                                    <TextBlock Text="{Binding}"
+                                               Foreground="White"
+                                               FontWeight="SemiBold"/>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </StackPanel>
+            </Border>
+        </Grid>
 
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>

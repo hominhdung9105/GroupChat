@@ -26,7 +26,6 @@ namespace GroupChat_Client.ViewModels
         private readonly SemaphoreSlim _sendLock = new(1, 1);
         private readonly Dictionary<string, IncomingFileTransfer> _incomingFiles = new();
         private readonly HashSet<string> _outgoingFileIds = new();
-
         private const int ChunkSize = 64 * 1024;
         private const long MaxFileSizeBytes = 1024L * 1024 * 1024;
 
@@ -40,6 +39,8 @@ namespace GroupChat_Client.ViewModels
         public string ServerIp { get; }
 
         public ObservableCollection<ChatMessage> Messages { get; } = new();
+
+        public ObservableCollection<string> OnlineUsers { get; } = new();
 
         public string MessageText
         {
@@ -80,6 +81,9 @@ namespace GroupChat_Client.ViewModels
         public ICommand SendFileCommand { get; }
         public ICommand SendImageCommand { get; }
         public ICommand SaveFileCommand { get; }
+        public ICommand OpenImageCommand { get; }
+        
+       
 
         public ChatViewModel(TcpClient client, string username, string serverIp)
         {
@@ -100,6 +104,7 @@ namespace GroupChat_Client.ViewModels
             SendFileCommand = new RelayCommand(SendFile);
             SendImageCommand = new RelayCommand(SendImage);
             SaveFileCommand = new RelayCommand<ChatMessage>(SaveFileAs);
+            OpenImageCommand = new RelayCommand<string>(OpenImage);
 
             // Gửi username lên server ngay khi vào ChatWindow
             _writer.WriteLine(Username);
@@ -133,6 +138,25 @@ namespace GroupChat_Client.ViewModels
             catch (Exception ex)
             {
                 MessageBox.Show($"Send failed: {ex.Message}");
+            }
+        }
+
+        private void OpenImage(string? imagePath)
+        {
+            if (string.IsNullOrWhiteSpace(imagePath) || !File.Exists(imagePath))
+                return;
+
+            try
+            {
+                var viewer = new ImageViewerWindow(imagePath)
+                {
+                    Owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(window => window.IsActive)
+                };
+                viewer.Show();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Open image failed: {ex.Message}");
             }
         }
 
@@ -181,6 +205,12 @@ namespace GroupChat_Client.ViewModels
                         continue;
                     }
 
+                    if (message.StartsWith("USERS_LIST|", StringComparison.OrdinalIgnoreCase))
+                    {
+                        HandleUsersList(message);
+                        continue;
+                    }
+
                     if (message.StartsWith("TEXT|", StringComparison.OrdinalIgnoreCase))
                     {
                         HandleTextMessage(message);
@@ -225,6 +255,31 @@ namespace GroupChat_Client.ViewModels
                     });
                 }
             }
+        }
+
+        private void HandleUsersList(string message)
+        {
+            string[] parts = message.Split('|', 2);
+            if (parts.Length < 2)
+                return;
+
+            string[] encodedNames = parts[1]
+                .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+            var names = encodedNames
+                .Select(name => DecodeBase64(name))
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                OnlineUsers.Clear();
+                foreach (string name in names)
+                {
+                    OnlineUsers.Add(name);
+                }
+            });
         }
 
         public async Task HandleFileDropAsync(IEnumerable<string> paths)

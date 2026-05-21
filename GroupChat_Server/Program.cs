@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
@@ -136,6 +137,7 @@ class AsyncChatServer
 
             // FIX LỖI 1: Phải phát tín hiệu cập nhật số người cho mọi người khi có người VÀO THÀNH CÔNG
             await BroadcastAsync($"USERS_COUNT|{clients.Count}");
+            await BroadcastAsync(BuildUsersListMessage());
 
             while (true)
             {
@@ -173,8 +175,17 @@ class AsyncChatServer
 
                 // Phát tín hiệu cập nhật số người khi có người RỜI ĐI
                 await BroadcastAsync($"USERS_COUNT|{clients.Count}");
+                await BroadcastAsync(BuildUsersListMessage());
             }
         }
+    }
+
+    static string BuildUsersListMessage()
+    {
+        var names = clients.Values
+            .Select(c => Convert.ToBase64String(Encoding.UTF8.GetBytes(c.Username)));
+
+        return $"USERS_LIST|{string.Join(';', names)}";
     }
 
     static async Task BroadcastAsync(string message)
