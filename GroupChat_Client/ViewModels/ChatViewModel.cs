@@ -484,13 +484,18 @@ namespace GroupChat_Client.ViewModels
 
             Application.Current.Dispatcher.Invoke(() =>
             {
+                // 🛠️ THÊM LOGIC KIỂM TRA: Nếu Server gửi lên tên là "SYSTEM" hoặc "System" (Không phân biệt hoa thường)
+                bool isSystem = string.Equals(sender, "System", StringComparison.OrdinalIgnoreCase);
+
                 Messages.Add(new ChatMessage
                 {
-                    Sender = sender,
+                    // Nếu là hệ thống thì ép chữ hiển thị thành "System" cho đồng bộ, ngược lại giữ nguyên tên thành viên
+                    Sender = isSystem ? "System" : sender,
                     Content = content,
                     SentAt = DateTime.Now,
                     IsOwnMessage = false,
-                    MessageKind = sender == "System" ? ChatMessageKind.System : ChatMessageKind.Text
+                    // Cập nhật loại tin nhắn chuẩn để XAML kích hoạt giao diện căn giữa
+                    MessageKind = isSystem ? ChatMessageKind.System : ChatMessageKind.Text
                 });
             });
         }
@@ -579,7 +584,7 @@ namespace GroupChat_Client.ViewModels
         private void HandleLegacyMessage(string message)
         {
             string[] parts = message.Split('|', 2);
-            string sender = parts.Length > 1 ? parts[0] : "Server";
+            string sender = parts.Length > 1 ? parts[0] : "System";
             string content = parts.Length > 1 ? parts[1] : message;
 
             if (sender == Username)
@@ -587,13 +592,16 @@ namespace GroupChat_Client.ViewModels
 
             Application.Current.Dispatcher.Invoke(() =>
             {
+                // 🛠️ Ép kiểm tra đồng bộ hoa thường cho kênh hệ thống cũ
+                bool isSystem = string.Equals(sender, "System", StringComparison.OrdinalIgnoreCase);
+
                 Messages.Add(new ChatMessage
                 {
-                    Sender = sender,
+                    Sender = isSystem ? "System" : sender,
                     Content = content,
                     SentAt = DateTime.Now,
                     IsOwnMessage = false,
-                    MessageKind = sender == "System" ? ChatMessageKind.System : ChatMessageKind.Text
+                    MessageKind = isSystem ? ChatMessageKind.System : ChatMessageKind.Text
                 });
             });
         }

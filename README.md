@@ -60,7 +60,7 @@ Strict separation between UI and business logic using:
 
 ## 🛠 Technologies Used
 
-- C# / .NET 8.0+
+- C# / .NET 10
 - WPF (Windows Presentation Foundation)
 - TCP Socket (`TcpListener` & `TcpClient`)
 - MVVM Pattern
@@ -82,13 +82,12 @@ GroupChat/
 │   │   └── ListBoxScrollBehavior.cs
 │   │
 │   ├── Commands/
-│   │   ├── RelayCommand.cs
-│   │   └── RelayCommand<T>.cs
+│   │   └── RelayCommand.cs
 │   │
 │   ├── Models/
 │   │   ├── ChatMessage.cs
-│   │   ├── EmojiModel.cs
-│   │   └── EmojiProvider.cs
+│   │   ├── EmojiProvider.cs
+│   │   └── MemberInfo.cs
 │   │
 │   ├── ViewModels/
 │   │   ├── MainViewModel.cs
@@ -98,10 +97,15 @@ GroupChat/
 │   │   ├── MainWindow.xaml
 │   │   ├── MainWindow.xaml.cs
 │   │   ├── ChatWindow.xaml
-│   │   └── ChatWindow.xaml.cs
+│   │   ├── ChatWindow.xaml.cs
+│   │   ├── ImageViewerWindow.xaml
+│   │   └── ImageViewerWindow.xaml.cs
 │   │
 │   ├── db/
 │   │   └── emoji.json
+│   │
+│   ├── Resources/
+│   │   └── ScrollBarStyle.xaml
 │   │
 │   ├── App.xaml
 │   └── App.xaml.cs
@@ -119,13 +123,8 @@ GroupChat/
 
 ### 1️⃣ Restore Packages
 
-Before running the client project:
-
 - Restore all NuGet packages
-- Make sure `Emoji.Wpf` is installed
-- Set `emoji.json` property to:
-  - **Build Action:** Content
-  - **Copy to Output Directory:** Copy if newer
+- Ensure `emoji.json` is copied to output (already set in the project file)
 
 ---
 
@@ -144,9 +143,6 @@ Port: 5000
 
 Connect using one of these IPs:
 IP: 192.168.1.X    Port: 5000
-
-If client is on the same computer:
-IP: 127.0.0.1    Port: 5000
 ==============================
 ```
 
@@ -194,8 +190,8 @@ Stores application data and structures.
 
 Examples:
 - `ChatMessage`
-- `EmojiModel`
 - `EmojiProvider`
+- `MemberInfo`
 
 ---
 

@@ -6,103 +6,139 @@
         xmlns:vm="clr-namespace:GroupChat_Client.ViewModels"
         mc:Ignorable="d"
         Title="Group Chat Client"
-        Height="800"
-        Width="800"
+        Height="700"
+        Width="650"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
-        Background="#1E1E1E">
+        Background="#111827">
 
     <Window.DataContext>
-        <vm:MainViewModel />
+        <vm:MainViewModel x:Name="MainViewModel" />
     </Window.DataContext>
 
     <Grid>
-        <Border Width="380"
-                Padding="30"
-                Background="#2A2A2A"
-                CornerRadius="16"
+        <Border Width="420"
+                Padding="40"
+                Background="#1F2937"
+                CornerRadius="24"
                 VerticalAlignment="Center"
-                HorizontalAlignment="Center">
+                HorizontalAlignment="Center"
+                BorderBrush="#374151"
+                BorderThickness="1">
 
             <StackPanel>
+                <Border Width="60" Height="60" 
+                        Background="#4F46E5" 
+                        CornerRadius="16" 
+                        Margin="0,0,0,20"
+                        HorizontalAlignment="Center">
+                    <TextBlock Text="💬" FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
 
-                <TextBlock Text="Group Chat"
-                           FontSize="28"
-                           FontWeight="Bold"
+                <TextBlock Text="Welcome Back"
+                           FontSize="26"
+                           FontWeight="Black"
                            Foreground="White"
                            HorizontalAlignment="Center"
-                           Margin="0,0,0,10"/>
+                           Margin="0,0,0,6"/>
 
-                <TextBlock Text="Connect to server"
-                           FontSize="14"
-                           Foreground="#BBBBBB"
+                <TextBlock Text="Kết nối đến phòng chat của bạn"
+                           FontSize="13"
+                           Foreground="#9CA3AF"
                            HorizontalAlignment="Center"
-                           Margin="0,0,0,30"/>
+                           Margin="0,0,0,35"/>
 
                 <TextBlock Text="Username"
                            Foreground="White"
-                           FontSize="14"
+                           FontSize="12"
+                           FontWeight="SemiBold"
                            Margin="0,0,0,8"/>
-
-                <TextBox Height="42"
+                <TextBox Height="44"
                          FontSize="14"
-                         Padding="10"
+                         Padding="12,10"
                          Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
-                         Background="#3A3A3A"
+                         Background="#111827"
                          Foreground="White"
-                         BorderBrush="#555555"
-                         BorderThickness="1"
-                         Margin="0,0,0,20"/>
+                         BorderBrush="#374151"
+                         BorderThickness="1.5"
+                         SelectionBrush="#6366F1"
+                         Margin="0,0,0,20">
+                    <TextBox.Resources>
+                        <Style TargetType="{x:Type Border}">
+                            <Setter Property="CornerRadius" Value="10"/>
+                        </Style>
+                    </TextBox.Resources>
+                </TextBox>
 
-                <TextBlock Text="Server IP"
-                           Foreground="White"
-                           FontSize="14"
-                           Margin="0,0,0,8"/>
+                <Grid Margin="0,0,0,30">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-                <TextBox Height="42"
-                         FontSize="14"
-                         Padding="10"
-                         Text="{Binding ServerIp, UpdateSourceTrigger=PropertyChanged}"
-                         Background="#3A3A3A"
-                         Foreground="White"
-                         BorderBrush="#555555"
-                         BorderThickness="1"
-                         Margin="0,0,0,20"/>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Server IP"
+                                   Foreground="White"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,8"/>
+                        <TextBox Height="44"
+                                 FontSize="14"
+                                 Padding="12,10"
+                                 Text="{Binding ServerIp, UpdateSourceTrigger=PropertyChanged}"
+                                 Background="#111827"
+                                 Foreground="White"
+                                 BorderBrush="#374151"
+                                 BorderThickness="1.5"
+                                 Margin="0">
+                            <TextBox.Resources>
+                                <Style TargetType="{x:Type Border}">
+                                    <Setter Property="CornerRadius" Value="10"/>
+                                </Style>
+                            </TextBox.Resources>
+                        </TextBox>
+                    </StackPanel>
 
-                <TextBlock Text="Port"
-                           Foreground="White"
-                           FontSize="14"
-                           Margin="0,0,0,8"/>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Port"
+                                   Foreground="White"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,8"/>
+                        <TextBox Height="44"
+                                 FontSize="14"
+                                 Padding="12,10"
+                                 Text="{Binding Port, UpdateSourceTrigger=PropertyChanged}"
+                                 Background="#111827"
+                                 Foreground="White"
+                                 BorderBrush="#374151"
+                                 BorderThickness="1.5"
+                                 Margin="0">
+                            <TextBox.Resources>
+                                <Style TargetType="{x:Type Border}">
+                                    <Setter Property="CornerRadius" Value="10"/>
+                                </Style>
+                            </TextBox.Resources>
+                        </TextBox>
+                    </StackPanel>
+                </Grid>
 
-                <TextBox Height="42"
-                         FontSize="14"
-                         Padding="10"
-                         Text="{Binding Port, UpdateSourceTrigger=PropertyChanged}"
-                         Background="#3A3A3A"
-                         Foreground="White"
-                         BorderBrush="#555555"
-                         BorderThickness="1"
-                         Margin="0,0,0,30"/>
-
-                <Button Height="45"
-        FontSize="15"
-        FontWeight="SemiBold"
-        Foreground="White"
-        BorderThickness="0"
-        Cursor="Hand"
-        Command="{Binding ConnectCommand}">
+                <Button Height="46"
+                        FontSize="15"
+                        FontWeight="Bold"
+                        Foreground="White"
+                        Cursor="Hand"
+                        Command="{Binding ConnectCommand}">
                     <Button.Style>
                         <Style TargetType="Button">
-                            <Setter Property="Content" Value="Connect"/>
+                            <Setter Property="Content" Value="Kết nối ngay"/>
                             <Setter Property="Background" Value="#4F46E5"/>
-
                             <Setter Property="Template">
                                 <Setter.Value>
                                     <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}"
-                                CornerRadius="10">
-                                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
+                                        <Border Background="{TemplateBinding Background}" CornerRadius="12">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Border>
                                     </ControlTemplate>
                                 </Setter.Value>
@@ -110,14 +146,13 @@
 
                             <Style.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="#6366F1"/>
+                                    <Setter Property="Background" Value="#4338CA"/>
                                 </Trigger>
-
                                 <DataTrigger Binding="{Binding IsConnecting}" Value="True">
-                                    <Setter Property="Content" Value="Connecting..."/>
+                                    <Setter Property="Content" Value="Đang kết nối..."/>
                                     <Setter Property="IsEnabled" Value="False"/>
-                                    <Setter Property="Background" Value="#555555"/>
-                                    <Setter Property="Foreground" Value="#AAAAAA"/>
+                                    <Setter Property="Background" Value="#4B5563"/>
+                                    <Setter Property="Foreground" Value="#9CA3AF"/>
                                     <Setter Property="Cursor" Value="Wait"/>
                                 </DataTrigger>
                             </Style.Triggers>

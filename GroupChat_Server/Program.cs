@@ -229,6 +229,73 @@ class AsyncChatServer
 
     static async Task BroadcastAsync(string message)
     {
+        // --- ĐOẠN THÊM MỚI: Xử lý hiển thị tin nhắn lên Terminal của Server ---
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(message))
+            {
+                string[] parts = message.Split('|');
+                string prefix = parts[0];
+
+                switch (prefix)
+                {
+                    case "TEXT":
+                        // Định dạng: TEXT|Sender|Content
+                        if (parts.Length >= 3)
+                        {
+                            string sender = parts[1];
+                            string content = parts[2];
+                            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] [CHAT] {sender}: {content}");
+                        }
+                        break;
+
+                    case "SYSTEM":
+                        // Định dạng: SYSTEM|Content
+                        if (parts.Length >= 2)
+                        {
+                            string content = parts[1];
+                            Console.ForegroundColor = ConsoleColor.Yellow; // Đổi chữ sang màu vàng cho thông báo hệ thống
+                            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] [SYSTEM] {content}");
+                            Console.ResetColor();
+                        }
+                        break;
+
+                    case "FILE_START":
+                        // Định dạng: FILE_START|Username|FileId|FileNameEncoded|FileSize|IsImage
+                        if (parts.Length >= 5)
+                        {
+                            string sender = parts[1];
+                            // Giải mã tên file từ Base64 để hiển thị tiếng Việt/ký tự đặc biệt chính xác
+                            string fileName = Encoding.UTF8.GetString(Convert.FromBase64String(parts[3]));
+                            long.TryParse(parts[4], out long size);
+                            double sizeInMb = size / (1024.0 * 1024.0);
+
+                            Console.ForegroundColor = ConsoleColor.Cyan; // Đổi chữ sang màu xanh lam cho file
+                            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] [FILE] {sender} đang gửi file: {fileName} ({sizeInMb:0.##} MB)");
+                            Console.ResetColor();
+                        }
+                        break;
+
+                    case "FILE_END":
+                        // Định dạng: FILE_END|FileId
+                        Console.ForegroundColor = ConsoleColor.Green; // Đổi chữ sang màu xanh lá khi hoàn thành
+                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] [FILE] Truyền tải file hoàn tất thành công.");
+                        Console.ResetColor();
+                        break;
+
+                    default:
+                        // Không in các lệnh điều khiển ngầm như USERS_COUNT hoặc USERS_LIST lên Terminal để tránh bị rác màn hình
+                        break;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[LOG ERROR] Lỗi hiển thị terminal: {ex.Message}");
+        }
+        // ---------------------------------------------------------------------
+
+        // Luồng xử lý gửi dữ liệu xuống các Client bên dưới giữ nguyên vẹn hoàn toàn
         List<int> deadClients = new();
         var activeClients = clients.ToList();
 

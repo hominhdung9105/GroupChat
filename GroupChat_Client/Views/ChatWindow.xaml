@@ -8,315 +8,348 @@
         PreviewDragOver="ChatWindow_OnPreviewDragOver"
         Drop="ChatWindow_OnDrop"
         Title="Group Chat"
-        Height="800"
-        Width="1000"
+        Height="850"
+        Width="1100"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="NoResize"
-        Background="#1E1E1E">
+        ResizeMode="CanResize"
+        Background="#111827">
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
-        <RowDefinition Height="Auto"/>
-        <!-- header -->
-        <RowDefinition Height="*"/>
-        <!-- body -->
-        <RowDefinition Height="Auto"/>
-        <!-- input -->
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        
         <Border Grid.Row="0"
-                Background="#2A2A2A"
-                CornerRadius="14"
-                Padding="18"
-                Margin="0,0,0,15">
-
+                Background="#1F2937"
+                CornerRadius="16"
+                Padding="20,15"
+                Margin="0,0,0,15"
+                BorderBrush="#374151"
+                BorderThickness="1">
             <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-                <Grid Grid.Row="0"
-                      Margin="0,0,0,14">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
+                <Button Grid.Column="0"
+                        Content="← Rời phòng"
+                        Height="36"
+                        Width="110"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        Background="#EF4444"
+                        Foreground="White"
+                        BorderThickness="0"
+                        HorizontalAlignment="Left"
+                        Command="{Binding BackCommand}">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}" CornerRadius="8">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Button.Style>
+                </Button>
 
-                    
-                    <Button Grid.Column="0"
-                            Content="Back"
-                            Height="36"
-                            Width="90"
-                            FontSize="13"
-                            FontWeight="SemiBold"
-                            Background="#4F46E5"
-                            Foreground="White"
-                            BorderThickness="0"
-                            HorizontalAlignment="Left"
-                            Command="{Binding BackCommand}"/>
-
-                    <TextBlock Grid.Column="1"
-                               Text="Group Chat"
-                               FontSize="28"
-                               FontWeight="Bold"
+                <StackPanel Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="Phòng Chat Chung"
+                               FontSize="22"
+                               FontWeight="Black"
                                Foreground="White"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center"/>
+                               HorizontalAlignment="Center"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,2,0,0">
+                        <TextBlock Text="User: " Foreground="#9CA3AF" FontSize="12"/>
+                        <TextBlock Text="{Binding Username, Mode=OneWay}" Foreground="#6366F1" FontWeight="Bold" FontSize="12" Margin="0,0,15,0"/>
+                        <TextBlock Text="Server: " Foreground="#9CA3AF" FontSize="12"/>
+                        <TextBlock Text="{Binding ServerIp, Mode=OneWay}" Foreground="#9CA3AF" FontSize="12"/>
+                    </StackPanel>
+                </StackPanel>
 
-                    <Border Grid.Column="2"
-                            Background="#3A3A3A"
-                            CornerRadius="8"
-                            Padding="12,6"
-                            VerticalAlignment="Center"
-                            HorizontalAlignment="Right">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="👤" 
-                                       Foreground="#10B981" 
-                                       FontSize="14" 
-                                       Margin="0,0,6,0"
-                                       VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding OnlineCount}" 
-                                       Foreground="#10B981" 
-                                       FontSize="14" 
-                                       FontWeight="Bold"
-                                       VerticalAlignment="Center"/>
-                            <TextBlock Text=" Online" 
-                                       Foreground="#BBBBBB" 
-                                       FontSize="14" 
-                                       Margin="2,0,0,0"
-                                       VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Border>
-                </Grid>
-
-                <Grid Grid.Row="1">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-
-                    <TextBlock Grid.Column="0"
-                               FontSize="14"
-                               Foreground="#BBBBBB"
-                               HorizontalAlignment="Left"
-                               VerticalAlignment="Center">
-                        <Run Text="Username: "/>
-                        <Run Text="{Binding Username, Mode=OneWay}"/>
-                    </TextBlock>
-
-                    <TextBlock Grid.Column="1"
-                               FontSize="14"
-                               Foreground="#BBBBBB"
-                               HorizontalAlignment="Right"
-                               VerticalAlignment="Center">
-                        <Run Text="IP: "/>
-                        <Run Text="{Binding ServerIp, Mode=OneWay}"/>
-                    </TextBlock>
-                </Grid>
+                <Border Grid.Column="2"
+                        Background="#10B981"
+                        CornerRadius="20"
+                        Padding="14,6"
+                        VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="🟢" FontSize="10" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding OnlineCount}" Foreground="White" FontWeight="Black" FontSize="13" VerticalAlignment="Center"/>
+                        <TextBlock Text=" Online" Foreground="White" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
             </Grid>
         </Border>
-        
 
-
-        <Grid Grid.Row="1"
-              Margin="0,0,0,15">
+        <Grid Grid.Row="1" Margin="0,0,0,15">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="3*"/>
-                <ColumnDefinition Width="12"/>
+                <ColumnDefinition Width="3.2*"/>
+                <ColumnDefinition Width="15"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0"
-                    Background="#2A2A2A"
-                    CornerRadius="14"
-                    Padding="15">
+                    Background="#1F2937"
+                    CornerRadius="16"
+                    Padding="15"
+                    BorderBrush="#374151"
+                    BorderThickness="1">
 
                 <ListBox ItemsSource="{Binding Messages}"
                          beh:ListBoxScrollBehavior.AutoScroll="True"
-                         Background="#2A2A2A"
+                         Background="Transparent"
                          BorderThickness="0"
-                         Foreground="White">
-                <ListBox.ItemContainerStyle>
-                    <Style TargetType="ListBoxItem">
-                        <Setter Property="HorizontalContentAlignment" Value="Left"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsOwnMessage}" Value="True">
-                                <Setter Property="HorizontalContentAlignment" Value="Right"/>
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding MessageKind}" 
-                         Value="{x:Static models:ChatMessageKind.System}">
-                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </ListBox.ItemContainerStyle>
+                         HorizontalContentAlignment="Stretch"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            <Setter Property="Focusable" Value="False"/>
+                            <Setter Property="Margin" Value="0,4"/>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
 
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel Margin="0,0,0,12">
-                            
-                            <StackPanel.Style>
-                                <Style TargetType="StackPanel">
-                                    <Setter Property="HorizontalAlignment" Value="Left"/>
-                                    <Setter Property="MaxWidth" Value="520"/>
-                                    <Setter Property="TextBlock.TextAlignment" Value="Left"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsOwnMessage}" Value="True">
-                                            <Setter Property="HorizontalAlignment" Value="Right"/>
-                                            <Setter Property="TextBlock.TextAlignment" Value="Right"/>
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding MessageKind}" 
-                     Value="{x:Static models:ChatMessageKind.System}">
-                                            <Setter Property="HorizontalAlignment" Value="Center"/>
-                                            <Setter Property="TextBlock.TextAlignment" Value="Center"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </StackPanel.Style>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
 
-                            <TextBlock Text="{Binding Sender}"
-                                       FontWeight="Bold"
-                                       Foreground="#A5B4FC"/>
+                                <StackPanel MaxWidth="600" Margin="5,2">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Setter Property="HorizontalAlignment" Value="Left"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsOwnMessage}" Value="True">
+                                                    <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding MessageKind}" Value="{x:Static models:ChatMessageKind.System}">
+                                                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
 
-                            <ContentControl Content="{Binding}">
-                                <ContentControl.Style>
-                                    <Style TargetType="ContentControl">
-                                        <Setter Property="ContentTemplate">
-                                            <Setter.Value>
-                                                <DataTemplate>
-                                                    <emoji:TextBlock Text="{Binding Content}"
-                                                                     Foreground="White"
-                                                                     TextWrapping="Wrap"/>
-                                                </DataTemplate>
-                                            </Setter.Value>
-                                        </Setter>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding MessageKind}" Value="{x:Static models:ChatMessageKind.Image}">
-                                                <Setter Property="ContentTemplate">
-                                                    <Setter.Value>
-                                                        <DataTemplate>
-                                                            <StackPanel>
-                                                                <Button Background="Transparent"
-                                                                        BorderThickness="0"
-                                                                        Padding="0"
-                                                                        HorizontalAlignment="Left"
-                                                                        Command="{Binding DataContext.OpenImageCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                                                        CommandParameter="{Binding ImagePath}">
-                                                                    <Image Source="{Binding ImagePath}"
-                                                                           Stretch="Uniform"
-                                                                           MaxHeight="260"
-                                                                           Margin="0,6,0,6"/>
-                                                                </Button>
-                                                                <ProgressBar Height="6"
-                                                                             Maximum="100"
-                                                                             Value="{Binding ProgressPercent}"
-                                                                             Background="#3A3A3A"
-                                                                             Foreground="#4F46E5">
-                                                                    <ProgressBar.Style>
-                                                                        <Style TargetType="ProgressBar">
-                                                                            <Setter Property="Visibility" Value="Visible"/>
-                                                                            <Style.Triggers>
-                                                                                <DataTrigger Binding="{Binding ProgressPercent}" Value="100">
-                                                                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                                                                </DataTrigger>
-                                                                            </Style.Triggers>
-                                                                        </Style>
-                                                                    </ProgressBar.Style>
-                                                                </ProgressBar>
-                                                            </StackPanel>
-                                                        </DataTemplate>
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding MessageKind}" Value="{x:Static models:ChatMessageKind.File}">
-                                                <Setter Property="ContentTemplate">
-                                                    <Setter.Value>
-                                                        <DataTemplate>
-                                                            <Border Background="#333333"
-                                                                    CornerRadius="8"
-                                                                    Padding="10"
-                                                                    Margin="0,6,0,6">
-                                                                <StackPanel>
-                                                                    <TextBlock Text="{Binding FileName}"
-                                                                               Foreground="White"
-                                                                               FontWeight="SemiBold"/>
-                                                                    <TextBlock Text="{Binding FileSizeDisplay}"
-                                                                               Foreground="#BBBBBB"
-                                                                               FontSize="11"
-                                                                               Margin="0,2,0,6"/>
-                                                                    <ProgressBar Height="6"
-                                                                                 Maximum="100"
-                                                                                 Value="{Binding ProgressPercent}"
-                                                                                 Background="#3A3A3A"
-                                                                                 Foreground="#4F46E5"
-                                                                                 Margin="0,0,0,8">
-                                                                        <ProgressBar.Style>
-                                                                            <Style TargetType="ProgressBar">
-                                                                                <Setter Property="Visibility" Value="Visible"/>
-                                                                                <Style.Triggers>
-                                                                                    <DataTrigger Binding="{Binding ProgressPercent}" Value="100">
-                                                                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                                                                    </DataTrigger>
-                                                                                </Style.Triggers>
-                                                                            </Style>
-                                                                        </ProgressBar.Style>
-                                                                    </ProgressBar>
-                                                                    <Button Content="Save As"
-                                                                            Width="90"
-                                                                            HorizontalAlignment="Left"
-                                                                            Command="{Binding DataContext.SaveFileCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                                                            CommandParameter="{Binding}"/>
-                                                                </StackPanel>
-                                                            </Border>
-                                                        </DataTemplate>
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ContentControl.Style>
-                            </ContentControl>
+                                    <TextBlock Text="{Binding Sender}"
+                                               FontSize="11"
+                                               FontWeight="Bold"
+                                               Foreground="#9CA3AF"
+                                               Margin="4,0,4,4">        
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding MessageKind}" Value="{x:Static models:ChatMessageKind.System}">
+                                                        <Setter Property="Foreground" Value="#F59E0B"/>
+                                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                        <Setter Property="TextAlignment" Value="Center"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsOwnMessage}" Value="True">
+                                                        <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                        <Setter Property="Foreground" Value="#818CF8"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
 
-                            <TextBlock Text="{Binding SentAt, StringFormat=HH:mm}"
-                                       Foreground="#888888"
-                                       FontSize="11"/>
-                        </StackPanel>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
+                                    <Border CornerRadius="12" Padding="12,10">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#374151"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsOwnMessage}" Value="True">
+                                                        <Setter Property="Background" Value="#4F46E5"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding MessageKind}" Value="{x:Static models:ChatMessageKind.System}">
+                                                        <Setter Property="Background" Value="#111827"/>
+                                                        <Setter Property="BorderBrush" Value="#374151"/>
+                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+
+                                        <ContentControl Content="{Binding}">
+                                            <ContentControl.Style>
+                                                <Style TargetType="ContentControl">
+                                                    <Setter Property="ContentTemplate">
+                                                        <Setter.Value>
+                                                            <DataTemplate>
+                                                                <emoji:TextBlock Text="{Binding Content}" Foreground="White" FontSize="14" TextWrapping="Wrap"/>
+                                                            </DataTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding MessageKind}" Value="{x:Static models:ChatMessageKind.System}">
+                                                            <Setter Property="ContentTemplate">
+                                                                <Setter.Value>
+                                                                    <DataTemplate>
+                                                                        <TextBlock Text="{Binding Content}" Foreground="#F59E0B" FontSize="12.5" FontWeight="Medium" FontStyle="Italic" TextWrapping="Wrap" TextAlignment="Center"/>
+                                                                    </DataTemplate>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </DataTrigger>
+
+                                                        <DataTrigger Binding="{Binding MessageKind}" Value="{x:Static models:ChatMessageKind.Image}">
+                                                            <Setter Property="ContentTemplate">
+                                                                <Setter.Value>
+                                                                    <DataTemplate>
+                                                                        <StackPanel>
+                                                                            <Button Background="Transparent" BorderThickness="0" Padding="0" Cursor="Hand"
+                                                                                    Command="{Binding DataContext.OpenImageCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                                                    CommandParameter="{Binding ImagePath}">
+                                                                                <Border CornerRadius="8" ClipToBounds="True">
+                                                                                    <Image Source="{Binding ImagePath}" Stretch="Uniform" MaxHeight="240"/>
+                                                                                </Border>
+                                                                            </Button>
+                                                                            <ProgressBar Height="5" Maximum="100" Value="{Binding ProgressPercent}" Background="#1F2937" Foreground="#10B981" Margin="0,6,0,0">
+                                                                                <ProgressBar.Style>
+                                                                                    <Style TargetType="ProgressBar">
+                                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                                        <Style.Triggers>
+                                                                                            <DataTrigger Binding="{Binding ProgressPercent}" Value="100">
+                                                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                                            </DataTrigger>
+                                                                                        </Style.Triggers>
+                                                                                    </Style>
+                                                                                </ProgressBar.Style>
+                                                                            </ProgressBar>
+                                                                        </StackPanel>
+                                                                    </DataTemplate>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </DataTrigger>
+
+                                                        <DataTrigger Binding="{Binding MessageKind}" Value="{x:Static models:ChatMessageKind.File}">
+                                                            <Setter Property="ContentTemplate">
+                                                                <Setter.Value>
+                                                                    <DataTemplate>
+                                                                        <Border Background="#111827" CornerRadius="8" Padding="12" Width="260">
+                                                                            <StackPanel>
+                                                                                <Grid>
+                                                                                    <Grid.ColumnDefinitions>
+                                                                                        <ColumnDefinition Width="Auto"/>
+                                                                                        <ColumnDefinition Width="*"/>
+                                                                                    </Grid.ColumnDefinitions>
+                                                                                    <TextBlock Grid.Column="0" Text="📁" FontSize="24" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                                                        <TextBlock Text="{Binding FileName}" Foreground="White" FontWeight="Bold" FontSize="13" TextTrimming="CharacterEllipsis"/>
+                                                                                        <TextBlock Text="{Binding FileSizeDisplay}" Foreground="#9CA3AF" FontSize="11" Margin="0,2,0,0"/>
+                                                                                    </StackPanel>
+                                                                                </Grid>
+                                                                                <ProgressBar Height="4" Maximum="100" Value="{Binding ProgressPercent}" Background="#374151" Foreground="#6366F1" Margin="0,10,0,0">
+                                                                                    <ProgressBar.Style>
+                                                                                        <Style TargetType="ProgressBar">
+                                                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                                                            <Style.Triggers>
+                                                                                                <DataTrigger Binding="{Binding ProgressPercent}" Value="100">
+                                                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                                                </DataTrigger>
+                                                                                            </Style.Triggers>
+                                                                                        </Style>
+                                                                                    </ProgressBar.Style>
+                                                                                </ProgressBar>
+                                                                                <Button Content="Tải Xuống" Height="28" Margin="0,8,0,0" FontSize="12" FontWeight="SemiBold" Background="#374151" Foreground="White" BorderThickness="0" Cursor="Hand"
+                                                                                        Command="{Binding DataContext.SaveFileCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                                                        CommandParameter="{Binding}">
+                                                                                    <Button.Style>
+                                                                                        <Style TargetType="Button">
+                                                                                            <Setter Property="Template">
+                                                                                                <Setter.Value>
+                                                                                                    <ControlTemplate TargetType="Button">
+                                                                                                        <Border Background="{TemplateBinding Background}" CornerRadius="6">
+                                                                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                                                        </Border>
+                                                                                                    </ControlTemplate>
+                                                                                                </Setter.Value>
+                                                                                            </Setter>
+                                                                                        </Style>
+                                                                                    </Button.Style>
+                                                                                </Button>
+                                                                            </StackPanel>
+                                                                        </Border>
+                                                                    </DataTemplate>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </ContentControl.Style>
+                                        </ContentControl>
+                                    </Border>
+
+                                    <TextBlock Text="{Binding SentAt, StringFormat=HH:mm}" Foreground="#6B7280" FontSize="10" Margin="4,3,4,0">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsOwnMessage}" Value="True">
+                                                        <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding MessageKind}" Value="{x:Static models:ChatMessageKind.System}">
+                                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
                 </ListBox>
             </Border>
 
-            <Border Grid.Column="2"
-                    Background="#2A2A2A"
-                    CornerRadius="14"
-                    Padding="12">
-                <StackPanel>
-                    <TextBlock Text="Members"
-                               Foreground="White"
-                               FontSize="16"
-                               FontWeight="SemiBold"
-                               Margin="0,0,0,10"/>
-                    <ListBox ItemsSource="{Binding OnlineUsers}"
-                             Background="#2A2A2A"
-                             BorderThickness="0"
-                             Foreground="White">
+            <Border Grid.Column="2" Background="#1F2937" CornerRadius="16" Padding="15" BorderBrush="#374151" BorderThickness="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="Thành Viên" Foreground="White" FontSize="16" FontWeight="Black" Margin="0,0,0,12"/>
+
+                    <ListBox Grid.Row="1" ItemsSource="{Binding OnlineUsers}" Background="Transparent" BorderThickness="0">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <ContentPresenter />
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Border Background="#333333"
-                                        CornerRadius="8"
-                                        Padding="8"
-                                        Margin="0,0,0,8">
-                                    <TextBlock Text="{Binding}"
-                                               Foreground="White"
-                                               FontWeight="SemiBold"/>
+                                <Border Background="#111827" CornerRadius="10" Padding="10,8" Margin="0,0,0,6" BorderBrush="#374151" BorderThickness="1">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Width="28" Height="28" CornerRadius="14" Background="#4F46E5" Margin="0,0,10,0">
+                                            <TextBlock Text="👤" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12"/>
+                                        </Border>
+                                        <TextBlock Grid.Column="1" Text="{Binding}" Foreground="White" FontWeight="Bold" FontSize="13.5" VerticalAlignment="Center"/>
+                                    </Grid>
                                 </Border>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
-                </StackPanel>
+                </Grid>
             </Border>
         </Grid>
 
@@ -326,80 +359,89 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="100"/>
+                <ColumnDefinition Width="110"/>
             </Grid.ColumnDefinitions>
 
-            <TextBox Grid.Column="0"
-                     Height="45"
-                     Padding="10"
-                     FontSize="14"
-                     Text="{Binding MessageText, UpdateSourceTrigger=PropertyChanged}"
-                     Background="#3A3A3A"
-                     Foreground="White"
-                     BorderBrush="#555555"
-                     BorderThickness="1"
-                     Margin="0,0,10,0"
-                     AcceptsReturn="True" 
-                     TextWrapping="Wrap" 
-                     VerticalScrollBarVisibility="Auto"
-                     beh:TextBoxEnterBehavior.EnterCommand="{Binding SendCommand}" />
+            <TextBox Grid.Column="0" Height="46" Padding="12,11" FontSize="14" Text="{Binding MessageText, UpdateSourceTrigger=PropertyChanged}" Background="#1F2937" Foreground="White" BorderBrush="#374151" BorderThickness="1.5" Margin="0,0,8,0" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" beh:TextBoxEnterBehavior.EnterCommand="{Binding SendCommand}">
+                <TextBox.Resources>
+                    <Style TargetType="{x:Type Border}">
+                        <Setter Property="CornerRadius" Value="12"/>
+                    </Style>
+                </TextBox.Resources>
+            </TextBox>
 
-            <Button x:Name="btnEmoji"
-                    Grid.Column="1"
-                    Content="😀"
-                    Height="45"
-                    Width="45"
-                    FontSize="18"
-                    Background="#3A3A3A"
-                    Foreground="White"
-                    BorderBrush="#555555"
-                    BorderThickness="1"
-                    Margin="0,0,10,0"
-                    Command="{Binding EmojiCommand}"/>
+            <Button x:Name="btnEmoji" Grid.Column="1" Content="😀" Height="46" Width="46" FontSize="18" Background="#1F2937" Foreground="White" BorderBrush="#374151" BorderThickness="1.5" Margin="0,0,8,0" Cursor="Hand" Command="{Binding EmojiCommand}">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Button.Style>
+            </Button>
 
-            <Button Grid.Column="2"
-                    Content="🖼️"
-                    Height="45"
-                    Width="45"
-                    FontSize="16"
-                    Background="#3A3A3A"
-                    Foreground="White"
-                    BorderBrush="#555555"
-                    BorderThickness="1"
-                    Margin="0,0,10,0"
-                    Command="{Binding SendImageCommand}"/>
+            <Button Grid.Column="2" Content="🖼️" Height="46" Width="46" FontSize="16" Background="#1F2937" Foreground="White" BorderBrush="#374151" BorderThickness="1.5" Margin="0,0,8,0" Cursor="Hand" Command="{Binding SendImageCommand}">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Button.Style>
+            </Button>
 
-            <Button Grid.Column="3"
-                    Content="📎"
-                    Height="45"
-                    Width="45"
-                    FontSize="16"
-                    Background="#3A3A3A"
-                    Foreground="White"
-                    BorderBrush="#555555"
-                    BorderThickness="1"
-                    Margin="0,0,10,0"
-                    Command="{Binding SendFileCommand}"/>
+            <Button Grid.Column="3" Content="📎" Height="46" Width="46" FontSize="16" Background="#1F2937" Foreground="White" BorderBrush="#374151" BorderThickness="1.5" Margin="0,0,10,0" Cursor="Hand" Command="{Binding SendFileCommand}">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Button.Style>
+            </Button>
 
-            <Popup IsOpen="{Binding IsEmojiPickerOpen}" 
-                   StaysOpen="False" 
-                   PlacementTarget="{Binding ElementName=btnEmoji}" 
-                   Placement="Top"
-                   AllowsTransparency="True">
+            <Button Grid.Column="4" Content="Gửi" Height="46" FontSize="14" FontWeight="Bold" Background="#4F46E5" Foreground="White" BorderThickness="0" Cursor="Hand" Command="{Binding SendCommand}">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" CornerRadius="12">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#4338CA"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
 
-                <Border Background="#2A2A2A" 
-                        BorderBrush="#555555" 
-                        BorderThickness="1" 
-                        CornerRadius="8" 
-                        Padding="10" 
-                        Width="360" 
-                        Margin="0,0,0,5">
-
-                    <TabControl ItemsSource="{Binding GroupedEmojis}" 
-                                Background="Transparent" 
-                                BorderThickness="0"
-                                MaxHeight="280">
-
+            <Popup IsOpen="{Binding IsEmojiPickerOpen}" StaysOpen="False" PlacementTarget="{Binding ElementName=btnEmoji}" Placement="Top" AllowsTransparency="True">
+                <Border Background="#1F2937" BorderBrush="#374151" BorderThickness="1.5" CornerRadius="12" Padding="10" Width="360" Margin="0,0,0,8">
+                    <TabControl ItemsSource="{Binding GroupedEmojis}" Background="Transparent" BorderThickness="0" MaxHeight="260">
                         <TabControl.Template>
                             <ControlTemplate TargetType="TabControl">
                                 <Grid>
@@ -407,39 +449,28 @@
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="*"/>
                                     </Grid.RowDefinitions>
-
-                                    <ScrollViewer Grid.Row="0" 
-                                                  HorizontalScrollBarVisibility="Auto" 
-                                                  VerticalScrollBarVisibility="Disabled"
-                                                  Margin="0,0,0,5"
-                                                  Padding="0,0,0,5">
+                                    <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="0,0,0,5">
                                         <StackPanel IsItemsHost="True" Orientation="Horizontal"/>
                                     </ScrollViewer>
-
                                     <ContentPresenter Grid.Row="1" ContentSource="SelectedContent"/>
                                 </Grid>
                             </ControlTemplate>
                         </TabControl.Template>
-
                         <TabControl.ItemContainerStyle>
                             <Style TargetType="TabItem">
                                 <Setter Property="Background" Value="Transparent"/>
-                                <Setter Property="Foreground" Value="#888888"/>
+                                <Setter Property="Foreground" Value="#9CA3AF"/>
                                 <Setter Property="Cursor" Value="Hand"/>
-                                <Setter Property="Margin" Value="0,0,6,0"/>
+                                <Setter Property="Margin" Value="0,0,4,0"/>
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="TabItem">
-                                            <Border Background="{TemplateBinding Background}" 
-                                                    CornerRadius="12" 
-                                                    Padding="12,5">
-                                                <ContentPresenter ContentSource="Header" 
-                                                                  HorizontalAlignment="Center" 
-                                                                  VerticalAlignment="Center"/>
+                                            <Border Background="{TemplateBinding Background}" CornerRadius="8" Padding="10,5">
+                                                <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter Property="Background" Value="#3A3A3A"/>
+                                                    <Setter Property="Background" Value="#374151"/>
                                                     <Setter Property="Foreground" Value="White"/>
                                                 </Trigger>
                                                 <Trigger Property="IsSelected" Value="True">
@@ -452,56 +483,37 @@
                                 </Setter>
                             </Style>
                         </TabControl.ItemContainerStyle>
-
                         <TabControl.ItemTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Key}" 
-                                           FontSize="11" 
-                                           FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding Key}" FontSize="11" FontWeight="Bold"/>
                             </DataTemplate>
                         </TabControl.ItemTemplate>
-
                         <TabControl.ContentTemplate>
                             <DataTemplate>
-                                <ScrollViewer VerticalScrollBarVisibility="Auto" 
-                                              HorizontalScrollBarVisibility="Disabled"
-                                              Margin="0,5,0,0">
-
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,5,0,0">
                                     <ItemsControl ItemsSource="{Binding}">
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate>
                                                 <WrapPanel Orientation="Horizontal" />
                                             </ItemsPanelTemplate>
                                         </ItemsControl.ItemsPanel>
-
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Button Command="{Binding PlacementTarget.DataContext.InsertEmojiCommand, RelativeSource={RelativeSource AncestorType=Popup}}"
-                                                        CommandParameter="{Binding Emoji}"
-                                                        ToolTip="{Binding Description}" 
-                                                        Background="Transparent" 
-                                                        BorderThickness="0" 
-                                                        Width="38" 
-                                                        Height="38" 
-                                                        Margin="2" 
-                                                        Cursor="Hand">
+                                                <Button Command="{Binding PlacementTarget.DataContext.InsertEmojiCommand, RelativeSource={RelativeSource AncestorType=Popup}}" CommandParameter="{Binding Emoji}" ToolTip="{Binding Description}" Background="Transparent" BorderThickness="0" Width="36" Height="36" Margin="2" Cursor="Hand">
                                                     <Button.Style>
                                                         <Style TargetType="Button">
                                                             <Setter Property="Template">
                                                                 <Setter.Value>
                                                                     <ControlTemplate TargetType="Button">
                                                                         <Border Background="{TemplateBinding Background}" CornerRadius="6">
-                                                                            <emoji:TextBlock Text="{Binding Emoji}" 
-                                                                                             FontSize="22" 
-                                                                                             HorizontalAlignment="Center" 
-                                                                                             VerticalAlignment="Center"/>
+                                                                            <emoji:TextBlock Text="{Binding Emoji}" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                                         </Border>
                                                                     </ControlTemplate>
                                                                 </Setter.Value>
                                                             </Setter>
                                                             <Style.Triggers>
                                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                                    <Setter Property="Background" Value="#3A3A3A"/>
+                                                                    <Setter Property="Background" Value="#374151"/>
                                                                 </Trigger>
                                                             </Style.Triggers>
                                                         </Style>
@@ -516,16 +528,6 @@
                     </TabControl>
                 </Border>
             </Popup>
-
-            <Button Grid.Column="4"
-                    Content="Send"
-                    Height="45"
-                    FontSize="14"
-                    FontWeight="SemiBold"
-                    Background="#4F46E5"
-                    Foreground="White"
-                    BorderThickness="0"
-                    Command="{Binding SendCommand}"/>
         </Grid>
     </Grid>
 </Window>
