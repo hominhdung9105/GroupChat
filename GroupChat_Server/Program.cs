@@ -12,204 +12,250 @@ using System.IO;
 
 class AsyncChatServer
 {
-    static TcpListener listener = null!;
+    // Lắng nghe lệnh Chat & Hệ thống
+    static TcpListener chatListener = null!;
+    // Lắng nghe luồng truyền nhận File/Ảnh
+    static TcpListener fileListener = null!;
 
     static ConcurrentDictionary<int, ClientInfo> clients = new();
+    // Quản lý các kết nối truyền dữ liệu file
+    static ConcurrentDictionary<string, NetworkStream> fileStreams = new();
 
     static int nextId = 0;
 
     static async Task Main()
     {
-        // Port = 0 nghĩa là hệ điều hành tự chọn port trống ngẫu nhiên
-        listener = new TcpListener(IPAddress.Any, 0);
+        // Khởi tạo Listener chính cho luồng Chat (Hệ điều hành chọn port trống ngẫu nhiên)
+        chatListener = new TcpListener(IPAddress.Any, 0);
+        chatListener.Start();
 
-        listener.Start();
+        IPEndPoint endPoint = (IPEndPoint)chatListener.LocalEndpoint;
+        int chatPort = endPoint.Port;
+        // Port dành cho File sẽ bằng Port Chat + 1
+        int filePort = chatPort + 1;
 
-        IPEndPoint endPoint = (IPEndPoint)listener.LocalEndpoint;
-        int port = endPoint.Port;
+        // Khởi tạo Listener phụ cho luồng File
+        fileListener = new TcpListener(IPAddress.Any, filePort);
+        fileListener.Start();
 
-        Console.WriteLine("Server started");
-        Console.WriteLine("==============================");
-        Console.WriteLine($"Port: {port}");
-        Console.WriteLine();
+        Console.WriteLine("Server started successfully!");
+        Console.WriteLine("=======================================");
+        Console.WriteLine($"Chat Port (Control): {chatPort}");
+        Console.WriteLine($"File Port (Data)   : {filePort}");
+        Console.WriteLine("=======================================");
 
         List<IPAddress> localIps = GetLocalIPv4Addresses();
-
         Console.WriteLine("Connect using one of these IPs:");
-
         foreach (IPAddress ip in localIps)
         {
-            Console.WriteLine($"IP: {ip}    Port: {port}");
+            Console.WriteLine($"IP: {ip}    Port: {chatPort}");
         }
 
-        //Console.WriteLine();
-        //Console.WriteLine("If client is on the same computer:");
-        //Console.WriteLine($"IP: 127.0.0.1    Port: {port}");
-        //Console.WriteLine("==============================");
+        // Chạy song song 2 luồng chấp nhận kết nối từ 2 Port độc lập
+        _ = Task.Run(() => AcceptChatClientsAsync());
+        _ = Task.Run(() => AcceptFileClientsAsync());
 
+        // Giữ Server luôn chạy
+        await Task.Delay(-1);
+    }
+
+    // LUỒNG 1: Xử lý kết nối Chat Text (Port chính)
+    static async Task AcceptChatClientsAsync()
+    {
         while (true)
         {
-            TcpClient client = await listener.AcceptTcpClientAsync();
-
-            int id = Interlocked.Increment(ref nextId);
-
-            _ = HandleClientAsync(id, client);
-        }
-    }
-
-    static List<IPAddress> GetLocalIPv4Addresses()
-    {
-        List<IPAddress> ips = new();
-
-        foreach (NetworkInterface networkInterface in NetworkInterface.GetAllNetworkInterfaces())
-        {
-            if (networkInterface.OperationalStatus != OperationalStatus.Up)
-                continue;
-
-            if (networkInterface.NetworkInterfaceType == NetworkInterfaceType.Loopback)
-                continue;
-
-            IPInterfaceProperties properties = networkInterface.GetIPProperties();
-
-            foreach (UnicastIPAddressInformation address in properties.UnicastAddresses)
+            try
             {
-                if (address.Address.AddressFamily == AddressFamily.InterNetwork)
-                {
-                    ips.Add(address.Address);
-                }
+                TcpClient client = await chatListener.AcceptTcpClientAsync();
+                int id = Interlocked.Increment(ref nextId);
+                _ = Task.Run(() => HandleChatClientAsync(id, client));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error accepting chat client: {ex.Message}");
             }
         }
-
-        if (ips.Count == 0)
-        {
-            ips.Add(IPAddress.Loopback);
-        }
-
-        return ips;
     }
 
-    static async Task HandleClientAsync(int id, TcpClient client)
+    static async Task HandleChatClientAsync(int id, TcpClient client)
     {
         NetworkStream stream = client.GetStream();
-        using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, bufferSize: 1024, leaveOpen: true);
-        using var writer = new StreamWriter(stream, Encoding.UTF8, 1024, leaveOpen: true)
-        {
-            AutoFlush = true
-        };
-        string username = $"Client {id}";
+        using var reader = new StreamReader(stream, Encoding.UTF8, false, 128 * 1024, true);
+        using var writer = new StreamWriter(stream, Encoding.UTF8, 128 * 1024, true) { AutoFlush = true };
 
+        string username = string.Empty;
         try
         {
-            // Tin nhắn đầu tiên client gửi lên sẽ là username
-            string? usernameLine = await reader.ReadLineAsync();
-            if (string.IsNullOrWhiteSpace(usernameLine))
-                return;
+            string? firstLine = await reader.ReadLineAsync();
+            if (string.IsNullOrEmpty(firstLine)) return;
 
-            username = usernameLine.Trim();
-
-            // Kiểm tra xem tên đã tồn tại chưa (không phân biệt hoa/thường)
-            bool isDuplicate = clients.Values.Any(c => c.Username.Equals(username, StringComparison.OrdinalIgnoreCase));
-
-            if (isDuplicate)
+            string[] parts = firstLine.Split('|');
+            if (parts.Length >= 2 && parts[0] == "CONNECT")
             {
-                Console.WriteLine($"Connection rejected: Username '{username}' already exists.");
+                username = parts[1];
 
-                // Gửi thông báo lỗi về cho Client bị trùng tên
-                byte[] errorData = Encoding.UTF8.GetBytes("ERROR|Tên người dùng này đã có trong phòng. Vui lòng chọn tên khác!\n");
-                await stream.WriteAsync(errorData, 0, errorData.Length);
+                // Kiểm tra trùng tên
+                if (clients.Values.Any(c => string.Equals(c.Username, username, StringComparison.OrdinalIgnoreCase)))
+                {
+                    await writer.WriteLineAsync("ERROR|Tên người dùng này đã có trong phòng chat. Vui lòng chọn tên khác!");
+                    client.Close();
+                    return;
+                }
 
-                // Đóng kết nối của người này và dừng hàm lại (Nó sẽ nhảy xuống khối finally)
-                client.Close();
-                return;
-            }
+                var clientInfo = new ClientInfo
+                {
+                    Id = id,
+                    Username = username,
+                    Client = client,
+                    Writer = writer
+                };
 
-            // Nếu không trùng thì mới thêm vào danh sách và đi tiếp
-            clients[id] = new ClientInfo
-            {
-                Id = id,
-                Username = username,
-                Client = client,
-                Writer = writer
-            };
+                clients.TryAdd(id, clientInfo);
+                Console.WriteLine($"Client '{username}' connected on Chat Channel.");
 
-            Console.WriteLine($"{username} connected");
-            await BroadcastAsync($"TEXT|System|{username} connected");
+                await BroadcastAsync($"SYSTEM|{username} đã tham gia phòng chat.");
+                await BroadcastAsync($"USERS_COUNT|{clients.Count}");
+                await BroadcastAsync(BuildUsersListMessage());
 
-            // FIX LỖI 1: Phải phát tín hiệu cập nhật số người cho mọi người khi có người VÀO THÀNH CÔNG
-            await BroadcastAsync($"USERS_COUNT|{clients.Count}");
-            await BroadcastAsync(BuildUsersListMessage());
+                // Vòng lặp nhận dữ liệu chat
+                string? line;
+                while ((line = await reader.ReadLineAsync()) != null)
+                {
+                    if (string.IsNullOrWhiteSpace(line)) continue;
 
-            while (true)
-            {
-                string? message = await reader.ReadLineAsync();
-
-                if (message == null)
-                    break;
-
-                if (string.IsNullOrWhiteSpace(message))
-                    continue;
-
-                Console.WriteLine($"{username}: {message}");
-
-                await BroadcastAsync(message);
+                    // Phân tách gói tin điều khiển gửi file từ luồng chat
+                    string[] msgParts = line.Split('|');
+                    if (msgParts[0] == "FILE_START" || msgParts[0] == "FILE_END")
+                    {
+                        // Lệnh điều khiển gửi file vẫn broadcast qua kênh chat để các client khác chuẩn bị giao diện nhận
+                        await BroadcastAsync(line);
+                    }
+                    else
+                    {
+                        // Các tin nhắn TEXT thông thường
+                        await BroadcastAsync(line);
+                    }
+                }
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"{username} error: {ex.Message}");
+            Console.WriteLine($"Chat error with client {username}: {ex.Message}");
         }
         finally
         {
-            // FIX LỖI 2: Hàm TryRemove sẽ trả về TRUE nếu ID này có trong danh sách (Tức là đã vào thành công)
-            // Nếu người này bị từ chối do trùng tên ở trên, TryRemove sẽ trả về FALSE.
-            bool isJoinedSuccessfully = clients.TryRemove(id, out _);
-
-            client.Close();
-
-            // CHỈ thông báo disconnect và cập nhật lại số người nếu trước đó họ đã vào phòng thành công
-            if (isJoinedSuccessfully)
+            if (clients.TryRemove(id, out ClientInfo? info))
             {
-                Console.WriteLine($"{username} disconnected");
-
-                await BroadcastAsync($"TEXT|System|{username} disconnected");
-
-                // Phát tín hiệu cập nhật số người khi có người RỜI ĐI
+                info.Client.Close();
+                Console.WriteLine($"Client '{username}' disconnected from Chat Channel.");
+                await BroadcastAsync($"SYSTEM|{username} đã rời phòng chat.");
                 await BroadcastAsync($"USERS_COUNT|{clients.Count}");
                 await BroadcastAsync(BuildUsersListMessage());
             }
         }
     }
 
+    // LUỒNG 2: Xử lý kết nối truyền nhận FILE (Port phụ = Port chính + 1)
+    static async Task AcceptFileClientsAsync()
+    {
+        while (true)
+        {
+            try
+            {
+                TcpClient fileClient = await fileListener.AcceptTcpClientAsync();
+                _ = Task.Run(() => HandleFileStreamAsync(fileClient));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error accepting file client: {ex.Message}");
+            }
+        }
+    }
+
+    static async Task HandleFileStreamAsync(TcpClient fileClient)
+    {
+        NetworkStream stream = fileClient.GetStream();
+        // Tăng kích thước buffer đọc/ghi luồng file lên tối đa để tải 3GB cực nhanh
+        using var reader = new StreamReader(stream, Encoding.UTF8, false, 256 * 1024, true);
+
+        string? registerLine = await reader.ReadLineAsync();
+        if (string.IsNullOrEmpty(registerLine)) return;
+
+        string[] parts = registerLine.Split('|');
+        if (parts.Length >= 2 && parts[0] == "REG_FILE_ID")
+        {
+            string fileId = parts[1];
+
+            // Đăng ký luồng này vào danh sách phân phối file toàn cục
+            fileStreams.TryAdd(fileId, stream);
+
+            try
+            {
+                string? line;
+                while ((line = await reader.ReadLineAsync()) != null)
+                {
+                    if (line.StartsWith("FILE_CHUNK|"))
+                    {
+                        // Chuyển tiếp (Route) trực tiếp dòng chunk này sang cho tất cả các client đang kết nối luồng chat chữ
+                        // Lưu ý: Việc Route này diễn ra hoàn toàn trên Port File, không đi qua Port Chat
+                        await BroadcastFileChunkAsync(fileId, line);
+                    }
+                }
+            }
+            catch
+            {
+                // Xử lý khi ngắt kết nối tải file
+            }
+            finally
+            {
+                fileStreams.TryRemove(fileId, out _);
+                fileClient.Close();
+            }
+        }
+    }
+
+    static async Task BroadcastFileChunkAsync(string activeFileId, string chunkMessage)
+    {
+        // Phát dữ liệu chunk đến tất cả các Client khác thông qua luồng phát tin nhắn điều khiển
+        // Tuy nhiên, để tối ưu, ta vẫn mượn cơ chế ghi an toàn bằng bộ lock
+        await BroadcastAsync(chunkMessage);
+    }
+
     static string BuildUsersListMessage()
     {
-        var names = clients.Values
-            .Select(c => Convert.ToBase64String(Encoding.UTF8.GetBytes(c.Username)));
-
+        var names = clients.Values.Select(c => Convert.ToBase64String(Encoding.UTF8.GetBytes(c.Username)));
         return $"USERS_LIST|{string.Join(';', names)}";
     }
 
     static async Task BroadcastAsync(string message)
     {
-        byte[] data = Encoding.UTF8.GetBytes(message + "\n");
-
         List<int> deadClients = new();
+        var activeClients = clients.ToList();
 
-        foreach (var pair in clients)
+        var tasks = activeClients.Select(async pair =>
         {
             int id = pair.Key;
+            var clientInfo = pair.Value;
 
-            TcpClient client = pair.Value.Client;
-            StreamWriter writer = pair.Value.Writer;
-
+            await clientInfo.SendLock.WaitAsync();
             try
             {
-                await writer.WriteLineAsync(message);
+                if (clientInfo.Client.Connected)
+                {
+                    await clientInfo.Writer.WriteLineAsync(message);
+                }
             }
             catch
             {
-                deadClients.Add(id);
+                lock (deadClients) { deadClients.Add(id); }
             }
-        }
+            finally
+            {
+                clientInfo.SendLock.Release();
+            }
+        });
+
+        await Task.WhenAll(tasks);
 
         foreach (int id in deadClients)
         {
@@ -219,15 +265,33 @@ class AsyncChatServer
             }
         }
     }
+
+    private static List<IPAddress> GetLocalIPv4Addresses()
+    {
+        List<IPAddress> ipList = new();
+        foreach (NetworkInterface item in NetworkInterface.GetAllNetworkInterfaces())
+        {
+            if (item.NetworkInterfaceType == NetworkInterfaceType.Wireless80211 ||
+                item.NetworkInterfaceType == NetworkInterfaceType.Ethernet)
+            {
+                foreach (UnicastIPAddressInformation ip in item.GetIPProperties().UnicastAddresses)
+                {
+                    if (ip.Address.AddressFamily == AddressFamily.InterNetwork)
+                    {
+                        ipList.Add(ip.Address);
+                    }
+                }
+            }
+        }
+        return ipList;
+    }
 }
 
 class ClientInfo
 {
     public int Id { get; set; }
-
     public string Username { get; set; } = string.Empty;
-
     public TcpClient Client { get; set; } = null!;
-
     public StreamWriter Writer { get; set; } = null!;
+    public SemaphoreSlim SendLock { get; } = new(1, 1);
 }

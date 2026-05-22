@@ -27,7 +27,11 @@ namespace GroupChat_Client.ViewModels
         private readonly Dictionary<string, IncomingFileTransfer> _incomingFiles = new();
         private readonly HashSet<string> _outgoingFileIds = new();
         private const int ChunkSize = 64 * 1024;
-        private const long MaxFileSizeBytes = 1024L * 1024 * 1024;
+
+        // SỬA LỖI 2: Đã nâng trực tiếp hằng số lên 3 GB ngay tại đây để không bị lỗi gán giá trị ở Constructor
+        private const long MaxFileSizeBytes = 3000L * 1024 * 1024;
+        private readonly int _chatPort;
+        private readonly int _filePort;
 
         private string _messageText = string.Empty;
         private bool _isDisconnecting;
@@ -82,21 +86,22 @@ namespace GroupChat_Client.ViewModels
         public ICommand SendImageCommand { get; }
         public ICommand SaveFileCommand { get; }
         public ICommand OpenImageCommand { get; }
-        
-       
 
         public ChatViewModel(TcpClient client, string username, string serverIp)
         {
             _client = client;
             _stream = client.GetStream();
-            _writer = new StreamWriter(_stream, Encoding.UTF8, 1024, leaveOpen: true)
-            {
-                AutoFlush = true
-            };
 
+            // Đọc Port hiện tại từ kết nối chính và tính toán Port cho luồng File
+            var remoteEndPoint = (System.Net.IPEndPoint)client.Client.RemoteEndPoint!;
+            _chatPort = remoteEndPoint.Port;
+            _filePort = _chatPort + 1; // Luôn bằng Port chính + 1
+
+            _writer = new StreamWriter(_stream, Encoding.UTF8, 128 * 1024) { AutoFlush = true };
             Username = username;
             ServerIp = serverIp;
 
+            // SỬA LỖI 1: Đưa việc khởi tạo các lệnh Command quay trở lại Constructor gốc của bạn
             SendCommand = new RelayCommand(SendMessage);
             BackCommand = new RelayCommand(BackToMain);
             EmojiCommand = new RelayCommand(() => IsEmojiPickerOpen = !IsEmojiPickerOpen);
@@ -106,10 +111,10 @@ namespace GroupChat_Client.ViewModels
             SaveFileCommand = new RelayCommand<ChatMessage>(SaveFileAs);
             OpenImageCommand = new RelayCommand<string>(OpenImage);
 
-            // Gửi username lên server ngay khi vào ChatWindow
-            _writer.WriteLine(Username);
+            // Gửi lệnh kết nối cùng username lên server ngay khi vào phòng
+            _writer.WriteLine($"CONNECT|{Username}");
 
-            _ = ReceiveMessagesAsync();
+            _ = Task.Run(() => ReceiveMessagesAsync());
         }
 
         private async void SendMessage()
@@ -117,7 +122,6 @@ namespace GroupChat_Client.ViewModels
             if (string.IsNullOrWhiteSpace(MessageText))
                 return;
 
-            // Loại bỏ các khoảng trắng thừa ở hai đầu tin nhắn trước khi gửi đi
             string content = MessageText.Trim();
 
             try
@@ -164,16 +168,12 @@ namespace GroupChat_Client.ViewModels
         {
             try
             {
-                // SỬ DỤNG STREAMREADER: Giải quyết triệt để lỗi "Dính gói tin" của TCP
-                // Nó sẽ tự động đọc từng tin nhắn cách nhau bởi dấu \n
-                using var reader = new System.IO.StreamReader(_stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, bufferSize: 1024, leaveOpen: true);
+                using var reader = new System.IO.StreamReader(_stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, bufferSize: 128 * 1024, leaveOpen: true);
 
                 while (true)
                 {
-                    // Đọc từng dòng thay vì đọc cả cục buffer
                     string? message = await reader.ReadLineAsync();
 
-                    // Nếu nhận được null nghĩa là Server đã ngắt kết nối
                     if (message == null)
                         break;
 
@@ -298,7 +298,6 @@ namespace GroupChat_Client.ViewModels
         {
             if (!string.IsNullOrEmpty(emoji))
             {
-                // Cộng chuỗi emoji trực tiếp vào ô chat hiện tại mà không làm đóng Popup
                 MessageText += emoji;
             }
         }
@@ -316,9 +315,6 @@ namespace GroupChat_Client.ViewModels
 
             Application.Current.Dispatcher.Invoke(() =>
             {
-                // XÓA ĐOẠN TẠO MAINWINDOW MỚI Ở ĐÂY!
-
-                // Chỉ tìm và đóng ChatWindow hiện tại thôi
                 foreach (Window window in Application.Current.Windows)
                 {
                     if (window is ChatWindow)
@@ -385,7 +381,7 @@ namespace GroupChat_Client.ViewModels
             var fileInfo = new FileInfo(filePath);
             if (fileInfo.Length > MaxFileSizeBytes)
             {
-                MessageBox.Show("File size exceeds 1 GB limit.");
+                MessageBox.Show("Dung lượng file vượt quá giới hạn 3 GB cho phép.");
                 return;
             }
 
@@ -408,38 +404,53 @@ namespace GroupChat_Client.ViewModels
             Messages.Add(message);
             _outgoingFileIds.Add(fileId);
 
-            await _sendLock.WaitAsync();
-            try
+            _ = Task.Run(async () =>
             {
-                await _writer.WriteLineAsync($"FILE_START|{Username}|{fileId}|{fileNameEncoded}|{fileInfo.Length}|{(isImage ? 1 : 0)}");
-
-                long sentBytes = 0;
-                byte[] buffer = new byte[ChunkSize];
-                using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, buffer.Length, useAsync: true);
-
-                int bytesRead;
-                while ((bytesRead = await fileStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                TcpClient? fileTransferClient = null;
+                try
                 {
-                    string chunk = Convert.ToBase64String(buffer, 0, bytesRead);
-                    await _writer.WriteLineAsync($"FILE_CHUNK|{fileId}|{chunk}");
-                    sentBytes += bytesRead;
+                    await SendLineAsync($"FILE_START|{Username}|{fileId}|{fileNameEncoded}|{fileInfo.Length}|{(isImage ? 1 : 0)}");
 
-                    double progress = Math.Min(100, sentBytes * 100d / fileInfo.Length);
-                    Application.Current.Dispatcher.Invoke(() => message.ProgressPercent = progress);
+                    fileTransferClient = new TcpClient();
+                    await fileTransferClient.ConnectAsync(ServerIp, _filePort);
+
+                    using var fileStreamNetwork = fileTransferClient.GetStream();
+                    using var fileWriter = new StreamWriter(fileStreamNetwork, Encoding.UTF8, 256 * 1024) { AutoFlush = true };
+
+                    await fileWriter.WriteLineAsync($"REG_FILE_ID|{fileId}");
+
+                    long sentBytes = 0;
+                    byte[] buffer = new byte[ChunkSize];
+                    using var fileDiskStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, buffer.Length, useAsync: true);
+
+                    int bytesRead;
+                    while ((bytesRead = await fileDiskStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                    {
+                        string chunkBase64 = Convert.ToBase64String(buffer, 0, bytesRead);
+
+                        await fileWriter.WriteLineAsync($"FILE_CHUNK|{fileId}|{chunkBase64}");
+
+                        sentBytes += bytesRead;
+
+                        double progress = Math.Min(100, sentBytes * 100.0 / fileInfo.Length);
+                        Application.Current.Dispatcher.Invoke(() => message.ProgressPercent = progress);
+                    }
+
+                    await SendLineAsync($"FILE_END|{fileId}");
+                    Application.Current.Dispatcher.Invoke(() => message.ProgressPercent = 100);
                 }
-
-                await _writer.WriteLineAsync($"FILE_END|{fileId}");
-                Application.Current.Dispatcher.Invoke(() => message.ProgressPercent = 100);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Send file failed: {ex.Message}");
-            }
-            finally
-            {
-                _outgoingFileIds.Remove(fileId);
-                _sendLock.Release();
-            }
+                catch (Exception ex)
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                        MessageBox.Show($"Gửi file '{fileName}' thất bại: {ex.Message}")
+                    );
+                }
+                finally
+                {
+                    fileTransferClient?.Close();
+                    _outgoingFileIds.Remove(fileId);
+                }
+            });
         }
 
         private void SaveFileAs(ChatMessage? message)
@@ -538,7 +549,7 @@ namespace GroupChat_Client.ViewModels
             await transfer.Stream.WriteAsync(bytes, 0, bytes.Length);
             transfer.ReceivedBytes += bytes.Length;
 
-            double progress = Math.Min(100, transfer.ReceivedBytes * 100d / transfer.TotalBytes);
+            double progress = Math.Min(100, transfer.ReceivedBytes * 100.0 / transfer.TotalBytes);
             Application.Current.Dispatcher.Invoke(() => transfer.Message.ProgressPercent = progress);
         }
 
