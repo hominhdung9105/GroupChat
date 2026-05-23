@@ -24,6 +24,8 @@ namespace GroupChat_Client.Models
         private long _fileSize;
         private double _progressPercent;
         private string? _tempFilePath;
+        private string? _fileId;
+        private bool _isDownloaded;
 
         public string Sender
         {
@@ -123,6 +125,26 @@ namespace GroupChat_Client.Models
             set
             {
                 _tempFilePath = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string? FileId
+        {
+            get => _fileId;
+            set
+            {
+                _fileId = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public bool IsDownloaded
+        {
+            get => _isDownloaded;
+            set
+            {
+                _isDownloaded = value;
                 OnPropertyChanged();
             }
         }
