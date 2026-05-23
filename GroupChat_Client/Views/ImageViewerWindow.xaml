@@ -9,7 +9,12 @@
         MaxWidth="1200" 
         MaxHeight="900">
     <Grid Margin="12">
-        <Border Background="#1F2937"
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0"
+                Background="#1F2937"
                 CornerRadius="16"
                 Padding="4"
                 BorderBrush="#374151"
@@ -23,5 +28,24 @@
                 </Border>
             </ScrollViewer>
         </Border>
+        <Button Grid.Row="1"
+                x:Name="DownloadButton"
+                Width="42"
+                Height="42"
+                HorizontalAlignment="Right"
+                Margin="0,8,0,0"
+                Foreground="White"
+                Background="#4F46E5"
+                Cursor="Hand"
+                Click="DownloadButton_Click">
+            <Button.Template>
+                <ControlTemplate TargetType="Button">
+                    <Border Background="{TemplateBinding Background}" CornerRadius="21">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Button.Template>
+            <TextBlock FontFamily="Segoe MDL2 Assets" FontSize="18" Text="&#xE896;"/>
+        </Button>
     </Grid>
 </Window>
